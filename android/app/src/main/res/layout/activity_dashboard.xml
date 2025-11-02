@@ -1,0 +1,513 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_light"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/padding_medium">
+
+        <!-- Header Section -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="@dimen/margin_large">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/welcomeText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/welcome_back"
+                    android:textSize="@dimen/text_size_xlarge"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary" />
+
+                <TextView
+                    android:id="@+id/userEmailText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="user@example.com"
+                    android:textSize="@dimen/text_size_medium"
+                    android:textColor="@color/text_secondary"
+                    android:layout_marginTop="4dp" />
+            </LinearLayout>
+
+            <ImageButton
+                android:id="@+id/settingsButton"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@android:drawable/ic_menu_more"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Settings" />
+        </LinearLayout>
+
+        <!-- Invoice Dashboard Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/invoiceDashboardCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="@color/card_background_dark"
+            app:cardCornerRadius="@dimen/corner_radius_large"
+            app:cardElevation="@dimen/elevation_medium"
+            android:layout_marginBottom="@dimen/margin_large">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="@dimen/padding_large">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/invoice_dashboard"
+                    android:textSize="@dimen/text_size_medium"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_white"
+                    android:layout_marginBottom="@dimen/margin_medium" />
+
+                <!-- Primary Stats Row -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:weightSum="2"
+                    android:layout_marginBottom="@dimen/margin_medium">
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/totalInvoicesCard"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        app:cardBackgroundColor="#40000000"
+                        app:cardCornerRadius="@dimen/corner_radius_medium"
+                        android:layout_marginEnd="@dimen/margin_small">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:padding="@dimen/padding_medium">
+
+                            <TextView
+                                android:id="@+id/totalInvoicesValue"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textSize="@dimen/text_size_xxlarge"
+                                android:textStyle="bold"
+                                android:textColor="@color/text_white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/total_invoices"
+                                android:textSize="@dimen/text_size_small"
+                                android:textColor="@color/text_white" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/totalAmountCard"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        app:cardBackgroundColor="#40000000"
+                        app:cardCornerRadius="@dimen/corner_radius_medium"
+                        android:layout_marginStart="@dimen/margin_small">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:padding="@dimen/padding_medium">
+
+                            <TextView
+                                android:id="@+id/totalAmountValue"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="R0.00"
+                                android:textSize="@dimen/text_size_xxlarge"
+                                android:textStyle="bold"
+                                android:textColor="@color/text_white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/total_amount"
+                                android:textSize="@dimen/text_size_small"
+                                android:textColor="@color/text_white" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+                </LinearLayout>
+
+                <!-- Secondary Stats Grid -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:weightSum="2">
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/totalApprovedCard"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        app:cardBackgroundColor="#40000000"
+                        app:cardCornerRadius="@dimen/corner_radius_small"
+                        android:layout_marginEnd="@dimen/margin_small">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:padding="@dimen/padding_medium">
+
+                            <TextView
+                                android:id="@+id/totalApprovedValue"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="R0.00"
+                                android:textSize="@dimen/text_size_large"
+                                android:textStyle="bold"
+                                android:textColor="@color/text_white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/total_approved"
+                                android:textSize="@dimen/text_size_xsmall"
+                                android:textColor="@color/text_white" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/totalDraftPendingCard"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        app:cardBackgroundColor="#40000000"
+                        app:cardCornerRadius="@dimen/corner_radius_small"
+                        android:layout_marginStart="@dimen/margin_small">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:padding="@dimen/padding_medium">
+
+                            <TextView
+                                android:id="@+id/totalDraftPendingValue"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="R0.00"
+                                android:textSize="@dimen/text_size_large"
+                                android:textStyle="bold"
+                                android:textColor="@color/text_white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/total_draft_pending"
+                                android:textSize="@dimen/text_size_xsmall"
+                                android:textColor="@color/text_white" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+                </LinearLayout>
+
+                <!-- Additional Stats -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:weightSum="3"
+                    android:layout_marginTop="@dimen/margin_small">
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/mostCostlyCard"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        app:cardBackgroundColor="#40000000"
+                        app:cardCornerRadius="@dimen/corner_radius_small"
+                        android:layout_marginEnd="@dimen/margin_small"
+                        android:visibility="gone">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:padding="@dimen/padding_small">
+
+                            <TextView
+                                android:id="@+id/mostCostlyValue"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="R0.00"
+                                android:textSize="@dimen/text_size_medium"
+                                android:textStyle="bold"
+                                android:textColor="@color/text_white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/most_costly_invoice"
+                                android:textSize="@dimen/text_size_xsmall"
+                                android:textColor="@color/text_white"
+                                android:gravity="center" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/highestQuantityCard"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        app:cardBackgroundColor="#40000000"
+                        app:cardCornerRadius="@dimen/corner_radius_small"
+                        android:layout_marginStart="@dimen/margin_small"
+                        android:layout_marginEnd="@dimen/margin_small"
+                        android:visibility="gone">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:padding="@dimen/padding_small">
+
+                            <TextView
+                                android:id="@+id/highestQuantityValue"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textSize="@dimen/text_size_medium"
+                                android:textStyle="bold"
+                                android:textColor="@color/text_white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/highest_quantity"
+                                android:textSize="@dimen/text_size_xsmall"
+                                android:textColor="@color/text_white"
+                                android:gravity="center" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/averageCard"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        app:cardBackgroundColor="#40000000"
+                        app:cardCornerRadius="@dimen/corner_radius_small"
+                        android:layout_marginStart="@dimen/margin_small">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:padding="@dimen/padding_small">
+
+                            <TextView
+                                android:id="@+id/averageValue"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="R0.00"
+                                android:textSize="@dimen/text_size_medium"
+                                android:textStyle="bold"
+                                android:textColor="@color/text_white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/average_invoice_value"
+                                android:textSize="@dimen/text_size_xsmall"
+                                android:textColor="@color/text_white"
+                                android:gravity="center" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+                </LinearLayout>
+
+                <!-- This Month Stat -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/thisMonthCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardBackgroundColor="#40000000"
+                    app:cardCornerRadius="@dimen/corner_radius_small"
+                    android:layout_marginTop="@dimen/margin_small">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:padding="@dimen/padding_medium">
+
+                        <TextView
+                            android:id="@+id/thisMonthValue"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="0"
+                            android:textSize="@dimen/text_size_large"
+                            android:textStyle="bold"
+                            android:textColor="@color/text_white" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/this_month_invoices"
+                            android:textSize="@dimen/text_size_small"
+                            android:textColor="@color/text_white" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Action Cards -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/createInvoiceCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="@color/card_background_grey"
+            app:cardCornerRadius="@dimen/corner_radius_medium"
+            app:cardElevation="@dimen/elevation_small"
+            android:layout_marginBottom="@dimen/margin_medium"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="@dimen/padding_large">
+
+                <View
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@drawable/ic_invoice_icon_background"
+                    android:layout_marginEnd="@dimen/margin_medium">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:text="+"
+                        android:textSize="24sp"
+                        android:textColor="@color/text_white"
+                        android:gravity="center" />
+                </View>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/create_invoice"
+                        android:textSize="@dimen/text_size_large"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/create_invoice_subtitle"
+                        android:textSize="@dimen/text_size_small"
+                        android:textColor="@color/text_secondary"
+                        android:layout_marginTop="4dp" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/viewInvoicesCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="@color/card_background_grey"
+            app:cardCornerRadius="@dimen/corner_radius_medium"
+            app:cardElevation="@dimen/elevation_small"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="@dimen/padding_large">
+
+                <ImageView
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:src="@android:drawable/ic_menu_view"
+                    android:background="@drawable/ic_invoice_icon_background"
+                    android:padding="12dp"
+                    android:tint="@color/text_white"
+                    android:layout_marginEnd="@dimen/margin_medium" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/view_invoices"
+                        android:textSize="@dimen/text_size_large"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/view_invoices_subtitle"
+                        android:textSize="@dimen/text_size_small"
+                        android:textColor="@color/text_secondary"
+                        android:layout_marginTop="4dp" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Progress Bar -->
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="@dimen/margin_large"
+            android:visibility="gone" />
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>
+

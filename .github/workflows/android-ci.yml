@@ -1,0 +1,56 @@
+name: Android App CI
+
+on:
+  push:
+    paths:
+      - 'android/**'
+      - '.github/workflows/android-ci.yml'
+  pull_request:
+    paths:
+      - 'android/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Gradle build (assembleDebug)
+        run: |
+          if [ -f gradlew ]; then
+            chmod +x gradlew
+            ./gradlew --no-daemon clean assembleDebug
+          else
+            echo 'No Gradle wrapper found in android/; skipping build'
+          fi
+
+      - name: Run SonarQube Analysis
+        uses: sonarsource/sonarqube-scan-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        continue-on-error: true
+
+      - name: Run Snyk Security Scan
+        uses: snyk/actions/gradle@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        continue-on-error: true
+        with:
+          args: --severity-threshold=high
+
+

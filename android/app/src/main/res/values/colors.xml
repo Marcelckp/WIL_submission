@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary Colors - Dark Blue/Grey -->
+    <color name="primary_dark">#2C3E50</color>
+    <color name="primary">#34495E</color>
+    <color name="primary_light">#5D6D7E</color>
+    
+    <!-- Background Colors -->
+    <color name="background_dark">#1A1F2E</color>
+    <color name="background_light">#F5F5F5</color>
+    <color name="white">#FFFFFF</color>
+    
+    <!-- Card Colors -->
+    <color name="card_background">#FFFFFF</color>
+    <color name="card_background_grey">#ECECEC</color>
+    <color name="card_background_dark">#34495E</color>
+    
+    <!-- Text Colors -->
+    <color name="text_primary">#2C3E50</color>
+    <color name="text_secondary">#7F8C8D</color>
+    <color name="text_light">#95A5A6</color>
+    <color name="text_white">#FFFFFF</color>
+    
+    <!-- Input Field Colors -->
+    <color name="input_background">#F8F9FA</color>
+    <color name="input_border">#E1E8ED</color>
+    
+    <!-- Button Colors -->
+    <color name="button_primary">#34495E</color>
+    <color name="button_secondary">#ECECEC</color>
+    <color name="button_text_primary">#FFFFFF</color>
+    <color name="button_text_secondary">#2C3E50</color>
+    
+    <!-- Accent Colors -->
+    <color name="accent_green">#27AE60</color>
+    <color name="accent_red">#E74C3C</color>
+    <color name="accent_yellow">#F39C12</color>
+    
+    <!-- Divider Colors -->
+    <color name="divider">#E1E8ED</color>
+    
+    <!-- Shadow Colors -->
+    <color name="shadow">#40000000</color>
+</resources>
+
