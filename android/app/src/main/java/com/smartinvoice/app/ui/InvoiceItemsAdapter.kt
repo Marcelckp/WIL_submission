@@ -9,7 +9,7 @@ import com.smartinvoice.app.databinding.ItemInvoiceLineBinding
 import java.util.*
 
 class InvoiceItemsAdapter(
-    private val onDelete: (InvoiceLineItem) -> Unit
+    private val onDelete: ((InvoiceLineItem) -> Unit)?
 ) : ListAdapter<InvoiceLineItem, InvoiceItemsAdapter.ItemViewHolder>(ItemDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ItemViewHolder {
@@ -18,7 +18,7 @@ class InvoiceItemsAdapter(
             parent,
             false
         )
-        return ItemViewHolder(binding, onDelete)
+        return ItemViewHolder(binding, onDelete ?: {})
     }
 
     override fun onBindViewHolder(holder: ItemViewHolder, position: Int) {
@@ -27,7 +27,7 @@ class InvoiceItemsAdapter(
 
     class ItemViewHolder(
         private val binding: ItemInvoiceLineBinding,
-        private val onDelete: (InvoiceLineItem) -> Unit
+        private val onDelete: ((InvoiceLineItem) -> Unit)?
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(item: InvoiceLineItem) {
@@ -37,8 +37,10 @@ class InvoiceItemsAdapter(
                 totalPriceText.text = String.format(Locale.getDefault(), "R%.2f", item.total)
 
                 deleteButton.setOnClickListener {
-                    onDelete(item)
+                    onDelete?.invoke(item)
                 }
+                
+                deleteButton.visibility = if (onDelete != null) View.VISIBLE else View.GONE
             }
         }
     }

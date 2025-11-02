@@ -505,3 +505,4 @@ const company = await prisma.company.upsert({
 - Read [Prisma Documentation](https://www.prisma.io/docs)
 - Explore [Prisma Examples](https://github.com/prisma/prisma-examples)
 
+
