@@ -96,6 +96,7 @@ class NewInvoiceActivity : AppCompatActivity() {
         setupViews()
         setupDateField()
         loadBoqItems()
+        showOfflineDisclaimer()
     }
 
     private fun setupViews() {
@@ -247,6 +248,12 @@ class NewInvoiceActivity : AppCompatActivity() {
     private fun calculateTotal() {
         val total = invoiceItems.sumOf { it.total }
         binding.totalAmountText.text = String.format(Locale.getDefault(), "R%.2f", total)
+    }
+
+    private fun showOfflineDisclaimer() {
+        // Show disclaimer to inform users that rates are from cached BOQ
+        binding.offlineBannerCard.visibility = View.VISIBLE
+        binding.offlineBannerText.text = "Rates reflect BOQ version as cached. Final invoice rates may update after sync."
     }
 
     private fun showPhotoOptions() {

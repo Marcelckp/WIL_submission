@@ -17,6 +17,8 @@ import com.smartinvoice.app.data.remote.models.InvoiceResponse
 import com.smartinvoice.app.databinding.ActivityInvoiceDetailBinding
 import com.smartinvoice.app.util.SharedPreferencesHelper
 import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*
@@ -253,23 +255,85 @@ class InvoiceDetailActivity : AppCompatActivity() {
     }
 
     private fun viewPdf() {
-        val pdfUrl = invoice?.serverPdfUrl
-        if (pdfUrl == null) {
-            Toast.makeText(this, "PDF not available yet", Toast.LENGTH_SHORT).show()
-            return
+        val id = invoiceId ?: return
+        
+        lifecycleScope.launch {
+            try {
+                binding.progressBar.visibility = View.VISIBLE
+                
+                // Download PDF bytes
+                val token = prefs.getToken()
+                val client = okhttp3.OkHttpClient()
+                val request = okhttp3.Request.Builder()
+                    .url("${com.smartinvoice.app.BuildConfig.API_BASE_URL}invoices/$id/pdf")
+                    .addHeader("Authorization", "Bearer $token")
+                    .build()
+                
+                val response = client.newCall(request).execute()
+                if (!response.isSuccessful) {
+                    Toast.makeText(this@InvoiceDetailActivity, "Failed to download PDF", Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
+                
+                val pdfBytes = response.body?.bytes() ?: return@launch
+                
+                // Save to temporary file
+                val tempFile = java.io.File(getExternalFilesDir(null), "invoice_${id}.pdf")
+                tempFile.writeBytes(pdfBytes)
+                
+                // Share PDF
+                sharePdf(tempFile)
+                
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Toast.makeText(this@InvoiceDetailActivity, "Failed to download PDF: ${e.message}", Toast.LENGTH_SHORT).show()
+            } finally {
+                binding.progressBar.visibility = View.GONE
+            }
         }
-
+    }
+    
+    private fun sharePdf(file: java.io.File) {
         try {
-            val intent = Intent(Intent.ACTION_VIEW).apply {
-                data = Uri.parse(pdfUrl)
-                setPackage("com.adobe.reader") // Try Adobe Reader first
+            val uri = androidx.core.content.FileProvider.getUriForFile(
+                this,
+                "${packageName}.fileprovider",
+                file
+            )
+            
+            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "application/pdf"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                putExtra(Intent.EXTRA_SUBJECT, "Invoice ${invoice?.invoiceNumber ?: invoiceId}")
+                putExtra(Intent.EXTRA_TEXT, "Please find attached invoice ${invoice?.invoiceNumber ?: invoiceId}")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
-            if (intent.resolveActivity(packageManager) == null) {
-                intent.setPackage(null) // Fallback to any PDF viewer
+            
+            // Create chooser with specific options
+            val chooserIntent = Intent.createChooser(shareIntent, "Share Invoice PDF").apply {
+                val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
+                    data = Uri.parse("mailto:")
+                    putExtra(Intent.EXTRA_SUBJECT, "Invoice ${invoice?.invoiceNumber ?: invoiceId}")
+                    putExtra(Intent.EXTRA_TEXT, "Please find attached invoice.")
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    type = "application/pdf"
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                
+                val whatsappIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = "application/pdf"
+                    setPackage("com.whatsapp")
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                
+                putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(emailIntent, whatsappIntent))
             }
-            startActivity(intent)
+            
+            startActivity(chooserIntent)
         } catch (e: Exception) {
-            Toast.makeText(this, "Failed to open PDF: ${e.message}", Toast.LENGTH_SHORT).show()
+            e.printStackTrace()
+            Toast.makeText(this, "Failed to share PDF: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 

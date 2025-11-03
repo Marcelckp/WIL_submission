@@ -24,6 +24,7 @@ class DashboardActivity : AppCompatActivity() {
     private val currencyFormatter = NumberFormat.getCurrencyInstance(Locale("en", "ZA"))
     private var startDateMillis: Long? = null
     private var endDateMillis: Long? = null
+    private val periodPrefs by lazy { getSharedPreferences("dashboard_period", MODE_PRIVATE) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,17 +53,24 @@ class DashboardActivity : AppCompatActivity() {
                 startActivity(Intent(this@DashboardActivity, InvoiceListActivity::class.java))
             }
 
-            // Default period = current month
-            val cal = Calendar.getInstance()
-            cal.set(Calendar.DAY_OF_MONTH, 1)
-            cal.set(Calendar.HOUR_OF_DAY, 0)
-            cal.set(Calendar.MINUTE, 0)
-            cal.set(Calendar.SECOND, 0)
-            cal.set(Calendar.MILLISECOND, 0)
-            startDateMillis = cal.timeInMillis
-            cal.add(Calendar.MONTH, 1)
-            cal.add(Calendar.MILLISECOND, -1)
-            endDateMillis = cal.timeInMillis
+            // Restore saved period or default to current month
+            val savedStart = periodPrefs.getLong("start", -1L)
+            val savedEnd = periodPrefs.getLong("end", -1L)
+            if (savedStart > 0 && savedEnd > 0) {
+                startDateMillis = savedStart
+                endDateMillis = savedEnd
+            } else {
+                val cal = Calendar.getInstance()
+                cal.set(Calendar.DAY_OF_MONTH, 1)
+                cal.set(Calendar.HOUR_OF_DAY, 0)
+                cal.set(Calendar.MINUTE, 0)
+                cal.set(Calendar.SECOND, 0)
+                cal.set(Calendar.MILLISECOND, 0)
+                startDateMillis = cal.timeInMillis
+                cal.add(Calendar.MONTH, 1)
+                cal.add(Calendar.MILLISECOND, -1)
+                endDateMillis = cal.timeInMillis
+            }
             updateSelectedPeriodText()
 
             monthPickerButton.setOnClickListener {
@@ -81,6 +89,7 @@ class DashboardActivity : AppCompatActivity() {
                     c.add(Calendar.MONTH, 1)
                     c.add(Calendar.MILLISECOND, -1)
                     endDateMillis = c.timeInMillis
+                    periodPrefs.edit().putLong("start", startDateMillis!!).putLong("end", endDateMillis!!).apply()
                     updateSelectedPeriodText()
                     loadDashboardData()
                 }
@@ -94,6 +103,9 @@ class DashboardActivity : AppCompatActivity() {
                 picker.addOnPositiveButtonClickListener { range ->
                     startDateMillis = range.first
                     endDateMillis = range.second
+                    if (startDateMillis != null && endDateMillis != null) {
+                        periodPrefs.edit().putLong("start", startDateMillis!!).putLong("end", endDateMillis!!).apply()
+                    }
                     updateSelectedPeriodText()
                     loadDashboardData()
                 }

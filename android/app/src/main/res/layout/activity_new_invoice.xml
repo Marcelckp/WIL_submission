@@ -55,6 +55,45 @@
             </LinearLayout>
         </LinearLayout>
 
+        <!-- Offline Disclaimer Banner -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/offlineBannerCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="#FFF3CD"
+            app:cardCornerRadius="@dimen/corner_radius_medium"
+            app:cardElevation="0dp"
+            android:layout_marginStart="@dimen/margin_medium"
+            android:layout_marginEnd="@dimen/margin_medium"
+            android:layout_marginTop="@dimen/margin_small"
+            android:layout_marginBottom="@dimen/margin_small"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="@dimen/padding_medium">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@android:drawable/ic_dialog_info"
+                    android:tint="#856404"
+                    android:layout_marginEnd="@dimen/margin_small" />
+
+                <TextView
+                    android:id="@+id/offlineBannerText"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Rates reflect BOQ version as cached. Final invoice rates may update after sync."
+                    android:textSize="@dimen/text_size_small"
+                    android:textColor="#856404" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
         <!-- Main Content Card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
@@ -81,7 +120,7 @@
                     android:textSize="@dimen/text_size_large"
                     android:textStyle="bold"
                     android:textColor="@color/text_primary"
-                    android:layout_marginBottom="@dimen/margin_medium" />
+                    android:layout_marginBottom="@dimen/margin_large" />
 
                 <!-- Invoice Number (Read-only) -->
                 <com.google.android.material.textfield.TextInputLayout
@@ -91,16 +130,21 @@
                     app:boxStrokeWidth="0dp"
                     app:boxBackgroundMode="filled"
                     app:boxBackgroundColor="@color/input_background"
-                    android:layout_marginBottom="@dimen/margin_medium"
+                    android:layout_marginTop="@dimen/margin_small"
+                    android:layout_marginBottom="@dimen/margin_large"
                     android:enabled="false">
 
-                    <com.google.android.material.textfield.TextInputEditText
+                        <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/invoiceNumberEditText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="Pending"
                         android:textSize="@dimen/text_size_medium"
-                        android:padding="@dimen/padding_medium" />
+                            android:paddingLeft="@dimen/padding_large"
+                            android:paddingRight="@dimen/padding_large"
+                            android:paddingTop="@dimen/padding_large"
+                            android:paddingBottom="@dimen/padding_large"
+                            android:minHeight="56dp" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <!-- Date and Prepared By Row -->
@@ -109,7 +153,8 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:weightSum="2"
-                    android:layout_marginBottom="@dimen/margin_medium">
+                    android:layout_marginTop="@dimen/margin_small"
+                    android:layout_marginBottom="@dimen/margin_large">
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="0dp"
@@ -126,7 +171,11 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:textSize="@dimen/text_size_medium"
-                            android:padding="@dimen/padding_medium"
+                            android:paddingLeft="@dimen/padding_large"
+                            android:paddingRight="@dimen/padding_large"
+                            android:paddingTop="@dimen/padding_large"
+                            android:paddingBottom="@dimen/padding_large"
+                            android:minHeight="56dp"
                             android:inputType="date" />
                     </com.google.android.material.textfield.TextInputLayout>
 
@@ -145,7 +194,11 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:textSize="@dimen/text_size_medium"
-                            android:padding="@dimen/padding_medium" />
+                            android:paddingLeft="@dimen/padding_large"
+                            android:paddingRight="@dimen/padding_large"
+                            android:paddingTop="@dimen/padding_large"
+                            android:paddingBottom="@dimen/padding_large"
+                            android:minHeight="56dp" />
                     </com.google.android.material.textfield.TextInputLayout>
                 </LinearLayout>
 
@@ -157,14 +210,19 @@
                     app:boxStrokeWidth="0dp"
                     app:boxBackgroundMode="filled"
                     app:boxBackgroundColor="@color/input_background"
-                    android:layout_marginBottom="@dimen/margin_medium">
+                    android:layout_marginTop="@dimen/margin_small"
+                    android:layout_marginBottom="@dimen/margin_large">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/customerNameEditText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:textSize="@dimen/text_size_medium"
-                        android:padding="@dimen/padding_medium" />
+                        android:paddingLeft="@dimen/padding_large"
+                        android:paddingRight="@dimen/padding_large"
+                        android:paddingTop="@dimen/padding_large"
+                        android:paddingBottom="@dimen/padding_large"
+                        android:minHeight="56dp" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <!-- Project / Site -->
@@ -175,14 +233,19 @@
                     app:boxStrokeWidth="0dp"
                     app:boxBackgroundMode="filled"
                     app:boxBackgroundColor="@color/input_background"
-                    android:layout_marginBottom="@dimen/margin_medium">
+                    android:layout_marginTop="@dimen/margin_small"
+                    android:layout_marginBottom="@dimen/margin_large">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/projectSiteEditText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:textSize="@dimen/text_size_medium"
-                        android:padding="@dimen/padding_medium" />
+                        android:paddingLeft="@dimen/padding_large"
+                        android:paddingRight="@dimen/padding_large"
+                        android:paddingTop="@dimen/padding_large"
+                        android:paddingBottom="@dimen/padding_large"
+                        android:minHeight="56dp" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <!-- Area and Job No Row -->
@@ -191,7 +254,8 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:weightSum="2"
-                    android:layout_marginBottom="@dimen/margin_medium">
+                    android:layout_marginTop="@dimen/margin_small"
+                    android:layout_marginBottom="@dimen/margin_large">
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="0dp"
@@ -208,7 +272,11 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:textSize="@dimen/text_size_medium"
-                            android:padding="@dimen/padding_medium" />
+                            android:paddingLeft="@dimen/padding_large"
+                            android:paddingRight="@dimen/padding_large"
+                            android:paddingTop="@dimen/padding_large"
+                            android:paddingBottom="@dimen/padding_large"
+                            android:minHeight="56dp" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <com.google.android.material.textfield.TextInputLayout
@@ -226,7 +294,11 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:textSize="@dimen/text_size_medium"
-                            android:padding="@dimen/padding_medium" />
+                            android:paddingLeft="@dimen/padding_large"
+                            android:paddingRight="@dimen/padding_large"
+                            android:paddingTop="@dimen/padding_large"
+                            android:paddingBottom="@dimen/padding_large"
+                            android:minHeight="56dp" />
                     </com.google.android.material.textfield.TextInputLayout>
                 </LinearLayout>
 
@@ -247,12 +319,16 @@
                         app:boxBackgroundColor="@color/input_background"
                         android:layout_marginEnd="@dimen/margin_small">
 
-                        <com.google.android.material.textfield.TextInputEditText
+                    <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/poEditText"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:textSize="@dimen/text_size_medium"
-                            android:padding="@dimen/padding_medium" />
+                        android:paddingLeft="@dimen/padding_large"
+                        android:paddingRight="@dimen/padding_large"
+                        android:paddingTop="@dimen/padding_large"
+                        android:paddingBottom="@dimen/padding_large"
+                        android:minHeight="56dp" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <com.google.android.material.textfield.TextInputLayout
@@ -265,12 +341,16 @@
                         app:boxBackgroundColor="@color/input_background"
                         android:layout_marginStart="@dimen/margin_small">
 
-                        <com.google.android.material.textfield.TextInputEditText
+                    <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/grnEditText"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:textSize="@dimen/text_size_medium"
-                            android:padding="@dimen/padding_medium" />
+                        android:paddingLeft="@dimen/padding_large"
+                        android:paddingRight="@dimen/padding_large"
+                        android:paddingTop="@dimen/padding_large"
+                        android:paddingBottom="@dimen/padding_large"
+                        android:minHeight="56dp" />
                     </com.google.android.material.textfield.TextInputLayout>
                 </LinearLayout>
             </LinearLayout>
@@ -311,7 +391,7 @@
                     app:boxStrokeWidth="0dp"
                     app:boxBackgroundMode="filled"
                     app:boxBackgroundColor="@color/input_background"
-                    android:layout_marginBottom="@dimen/margin_medium"
+                    android:layout_marginBottom="@dimen/margin_large"
                     app:endIconMode="dropdown_menu">
 
                     <AutoCompleteTextView
@@ -330,7 +410,8 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:layout_marginBottom="@dimen/margin_medium">
+                    android:layout_marginTop="@dimen/margin_small"
+                    android:layout_marginBottom="@dimen/margin_large">
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="0dp"
@@ -358,6 +439,9 @@
                         android:layout_height="wrap_content"
                         android:text="@string/add_item"
                         style="@style/Button.Secondary"
+                        android:minHeight="48dp"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
                         android:layout_gravity="center_vertical" />
                 </LinearLayout>
 
@@ -370,33 +454,40 @@
                     android:layout_marginBottom="@dimen/margin_medium" />
 
                 <!-- Total Row -->
-                <LinearLayout
+                <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:background="@color/card_background_dark"
-                    android:padding="@dimen/padding_medium"
-                    app:cornerRadius="@dimen/corner_radius_small">
+                    app:cardBackgroundColor="@color/card_background_dark"
+                    app:cardCornerRadius="@dimen/corner_radius_medium"
+                    app:cardElevation="0dp"
+                    android:layout_marginTop="@dimen/margin_small">
 
-                    <TextView
-                        android:layout_width="0dp"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/total"
-                        android:textSize="@dimen/text_size_large"
-                        android:textStyle="bold"
-                        android:textColor="@color/text_white" />
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:padding="@dimen/padding_medium">
 
-                    <TextView
-                        android:id="@+id/totalAmountText"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="R0.00"
-                        android:textSize="@dimen/text_size_xlarge"
-                        android:textStyle="bold"
-                        android:textColor="@color/text_white" />
-                </LinearLayout>
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/total"
+                            android:textSize="@dimen/text_size_large"
+                            android:textStyle="bold"
+                            android:textColor="@color/text_white" />
+
+                        <TextView
+                            android:id="@+id/totalAmountText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="R0.00"
+                            android:textSize="@dimen/text_size_xlarge"
+                            android:textStyle="bold"
+                            android:textColor="@color/text_white" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
