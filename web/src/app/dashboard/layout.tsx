@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useAuthStore } from "@/store/authStore";
@@ -16,15 +16,20 @@ export default function DashboardLayout({
   const logout = useAuthStore((state) => state.logout);
   const user = useAuthStore((state) => state.user);
 
+  // Prevent hydration mismatches by waiting until mounted
+  const [mounted, setMounted] = useState(false);
   useEffect(() => {
-    if (!isAuthenticated) {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted && !isAuthenticated) {
       router.push("/login");
     }
-  }, [isAuthenticated, router]);
+  }, [mounted, isAuthenticated, router]);
 
-  if (!isAuthenticated) {
-    return null;
-  }
+  if (!mounted) return null;
+  if (!isAuthenticated) return null;
 
   // Determine active link based on current pathname
   const isDashboardActive = pathname === "/dashboard";

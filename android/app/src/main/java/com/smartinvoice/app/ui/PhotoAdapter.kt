@@ -10,7 +10,7 @@ import com.bumptech.glide.Glide
 import com.smartinvoice.app.databinding.ItemPhotoBinding
 
 class PhotoAdapter(
-    private val onDelete: (Uri) -> Unit
+    private val onDelete: ((Uri) -> Unit)?
 ) : ListAdapter<Uri, PhotoAdapter.PhotoViewHolder>(PhotoDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PhotoViewHolder {
@@ -28,7 +28,7 @@ class PhotoAdapter(
 
     class PhotoViewHolder(
         private val binding: ItemPhotoBinding,
-        private val onDelete: (Uri) -> Unit
+        private val onDelete: ((Uri) -> Unit)?
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(uri: Uri) {
@@ -37,8 +37,13 @@ class PhotoAdapter(
                 .centerCrop()
                 .into(binding.photoImageView)
 
-            binding.deleteButton.setOnClickListener {
-                onDelete(uri)
+            if (onDelete == null) {
+                binding.deleteButton.visibility = android.view.View.GONE
+            } else {
+                binding.deleteButton.visibility = android.view.View.VISIBLE
+                binding.deleteButton.setOnClickListener {
+                    onDelete.invoke(uri)
+                }
             }
         }
     }

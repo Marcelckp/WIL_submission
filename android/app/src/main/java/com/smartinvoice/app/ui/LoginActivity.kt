@@ -22,7 +22,7 @@ class LoginActivity : AppCompatActivity() {
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        apiService = ApiService.create(this)
+        apiService = com.smartinvoice.app.data.remote.ApiClient.create(this)
         prefs = SharedPreferencesHelper.getInstance(this)
 
         // Check if already logged in
@@ -82,7 +82,7 @@ class LoginActivity : AppCompatActivity() {
                 val request = LoginRequest(username, password)
                 val response = apiService.login(request)
 
-                if (response.success && response.token != null) {
+                if (response.token != null) {
                     // Save token and user info
                     prefs.saveToken(response.token)
                     response.user?.let { user ->
@@ -98,7 +98,7 @@ class LoginActivity : AppCompatActivity() {
                     Toast.makeText(this@LoginActivity, "Login successful", Toast.LENGTH_SHORT).show()
                     navigateToDashboard()
                 } else {
-                    Toast.makeText(this@LoginActivity, "Login failed: ${response.error ?: "Unknown error"}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this@LoginActivity, "Login failed", Toast.LENGTH_LONG).show()
                     binding.signInButton.isEnabled = true
                     binding.progressBar.visibility = View.GONE
                 }

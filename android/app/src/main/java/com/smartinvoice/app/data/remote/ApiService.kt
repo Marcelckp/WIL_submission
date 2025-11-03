@@ -85,7 +85,7 @@ class AuthInterceptor(private val tokenProvider: () -> String?) : Interceptor {
     }
 }
 
-object ApiService {
+object ApiClient {
     fun create(context: android.content.Context): ApiService {
         val tokenProvider = {
             com.smartinvoice.app.util.SharedPreferencesHelper.getInstance(context).getToken()

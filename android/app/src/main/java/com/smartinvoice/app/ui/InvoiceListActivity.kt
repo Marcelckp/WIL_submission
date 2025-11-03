@@ -22,7 +22,7 @@ class InvoiceListActivity : AppCompatActivity() {
         binding = ActivityInvoiceListBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        apiService = com.smartinvoice.app.data.remote.ApiService.create(this)
+        apiService = com.smartinvoice.app.data.remote.ApiClient.create(this)
         prefs = SharedPreferencesHelper.getInstance(this)
 
         setupViews()

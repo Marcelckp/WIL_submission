@@ -3,6 +3,7 @@ import { authRouter } from './routes/auth.js';
 import { boqRouter } from './routes/boq.js';
 import { invoicesRouter } from './routes/invoices.js';
 import { companyRouter } from './routes/company.js';
+import { usersRouter } from './routes/users.js';
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use('/api/auth', authRouter);
 app.use('/api/company', companyRouter);
+app.use('/api/users', usersRouter);
 app.use('/api/boq', boqRouter);
 app.use('/api/invoices', invoicesRouter);
 

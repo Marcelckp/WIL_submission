@@ -14,12 +14,15 @@
     <color name="card_background">#FFFFFF</color>
     <color name="card_background_grey">#ECECEC</color>
     <color name="card_background_dark">#34495E</color>
+    <color name="card_light_background">@color/card_background</color>
     
     <!-- Text Colors -->
     <color name="text_primary">#2C3E50</color>
     <color name="text_secondary">#7F8C8D</color>
     <color name="text_light">#95A5A6</color>
     <color name="text_white">#FFFFFF</color>
+    <color name="text_dark">@color/text_primary</color>
+    <color name="text_grey">@color/text_secondary</color>
     
     <!-- Input Field Colors -->
     <color name="input_background">#F8F9FA</color>
@@ -38,6 +41,7 @@
     
     <!-- Divider Colors -->
     <color name="divider">#E1E8ED</color>
+    <color name="divider_grey">@color/divider</color>
     
     <!-- Shadow Colors -->
     <color name="shadow">#40000000</color>

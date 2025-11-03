@@ -92,7 +92,7 @@
                     app:boxBackgroundMode="filled"
                     app:boxBackgroundColor="@color/input_background"
                     android:layout_marginBottom="@dimen/margin_medium"
-                    app:enabled="false">
+                    android:enabled="false">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/invoiceNumberEditText"

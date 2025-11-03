@@ -1,7 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    id("kotlin-kapt")
+    id("com.google.devtools.ksp") version "1.9.20-1.0.14"
 }
 
 configurations.all {
@@ -49,6 +49,16 @@ android {
         viewBinding = true
         buildConfig = true
     }
+    
+    // Disable JDK image transform to work around jlink issues
+    lint {
+        checkReleaseBuilds = false
+    }
+}
+
+// Disable JDK image transform for Java compilation
+tasks.withType<JavaCompile>().configureEach {
+    options.isFork = false
 }
 
 dependencies {
@@ -70,7 +80,7 @@ dependencies {
     // Room
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
-    kapt("androidx.room:room-compiler:2.6.1")
+    ksp("androidx.room:room-compiler:2.6.1")
     
     // Network
     implementation("com.squareup.retrofit2:retrofit:2.9.0")

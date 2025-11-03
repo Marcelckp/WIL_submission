@@ -35,9 +35,7 @@ class InvoiceDetailActivity : AppCompatActivity() {
     )
     
     private val commentsAdapter = CommentsAdapter()
-    private val photosAdapter = PhotoAdapter(
-        onDelete = null // Read-only for now
-    )
+    private val photosAdapter = PhotoAdapter(null)
     
     private val currencyFormat = NumberFormat.getCurrencyInstance(Locale("en", "ZA")).apply {
         minimumFractionDigits = 2
@@ -64,7 +62,7 @@ class InvoiceDetailActivity : AppCompatActivity() {
             return
         }
 
-        apiService = ApiService.create(this)
+        apiService = com.smartinvoice.app.data.remote.ApiClient.create(this)
         prefs = SharedPreferencesHelper.getInstance(this)
 
         setupViews()

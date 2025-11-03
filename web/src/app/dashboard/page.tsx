@@ -175,12 +175,15 @@ export default function DashboardPage() {
               Review and approve submitted invoices
             </p>
           </Link>
-          <div className="bg-white p-6 rounded-lg shadow">
+          <Link
+            href="/dashboard/settings"
+            className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition"
+          >
             <h3 className="text-lg font-semibold mb-2">Settings</h3>
             <p className="text-gray-600 text-sm">
               Company settings and configuration
             </p>
-          </div>
+          </Link>
         </div>
       </div>
     </div>

@@ -16,6 +16,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.smartinvoice.app.data.remote.ApiService
+import okhttp3.MediaType.Companion.toMediaType
 import com.smartinvoice.app.data.remote.models.BoqItemResponse
 import com.smartinvoice.app.data.remote.models.CreateInvoiceRequest
 import com.smartinvoice.app.data.remote.models.InvoiceLineRequest
@@ -38,24 +39,12 @@ class NewInvoiceActivity : AppCompatActivity() {
     private lateinit var apiService: ApiService
     private lateinit var prefs: SharedPreferencesHelper
     
-    private val itemsAdapter = InvoiceItemsAdapter(
-        onDelete = { item ->
-            invoiceItems.removeAll { it.id == item.id }
-            itemsAdapter.submitList(invoiceItems.toList())
-            calculateTotal()
-        }
-    )
+    private lateinit var itemsAdapter: InvoiceItemsAdapter
+    private lateinit var photosAdapter: PhotoAdapter
     
-    private val photosAdapter = PhotoAdapter(
-        onDelete = { photo ->
-            photoUris.remove(photo)
-            photosAdapter.submitList(photoUris.toList())
-        }
-    )
-    
-    private val invoiceItems = mutableListOf<InvoiceLineItem>()
-    private val photoUris = mutableListOf<Uri>()
-    private val boqItems = mutableListOf<BoqItemResponse>()
+    private val invoiceItems: MutableList<InvoiceLineItem> = mutableListOf()
+    private val photoUris: MutableList<Uri> = mutableListOf()
+    private val boqItems: MutableList<BoqItemResponse> = mutableListOf()
     
     private val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     private val apiDateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
@@ -85,8 +74,24 @@ class NewInvoiceActivity : AppCompatActivity() {
         binding = ActivityNewInvoiceBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        apiService = com.smartinvoice.app.data.remote.ApiService.create(this)
+        apiService = com.smartinvoice.app.data.remote.ApiClient.create(this)
         prefs = SharedPreferencesHelper.getInstance(this)
+
+        // Initialize adapters now that fields are ready
+        itemsAdapter = InvoiceItemsAdapter(
+            onDelete = { item ->
+                invoiceItems.removeAll { it.id == item.id }
+                itemsAdapter.submitList(invoiceItems.toList())
+                calculateTotal()
+            }
+        )
+
+        photosAdapter = PhotoAdapter(
+            onDelete = { photo ->
+                photoUris.remove(photo)
+                photosAdapter.submitList(photoUris.toList())
+            }
+        )
 
         setupViews()
         setupDateField()
@@ -362,10 +367,7 @@ class NewInvoiceActivity : AppCompatActivity() {
             val bytes = inputStream.readBytes()
             inputStream.close()
 
-            val requestFile = okhttp3.RequestBody.create(
-                okhttp3.MediaType.parse("image/jpeg"),
-                bytes
-            )
+            val requestFile = okhttp3.RequestBody.create("image/jpeg".toMediaType(), bytes)
             
             val filePart = okhttp3.MultipartBody.Part.createFormData("file", "photo.jpg", requestFile)
             apiService.uploadMedia(invoiceId, filePart)

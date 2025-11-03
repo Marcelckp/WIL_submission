@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { cityPowerBoqItems } from "./boq-data.js";
@@ -45,8 +46,43 @@ async function main() {
     },
     create: {
       email: "field@test.com",
-      name: "Field Operator",
+      name: "Jordan Lee",
       passwordHash: fieldHash,
+      role: "FIELD",
+      companyId: company.id,
+      active: true,
+    },
+  });
+
+  // Additional field operator users
+  const field2Hash = await bcrypt.hash("field123", 10);
+  const field2 = await prisma.user.upsert({
+    where: { email: "field2@test.com" },
+    update: {
+      passwordHash: field2Hash,
+      active: true,
+    },
+    create: {
+      email: "field2@test.com",
+      name: "Alex Johnson",
+      passwordHash: field2Hash,
+      role: "FIELD",
+      companyId: company.id,
+      active: true,
+    },
+  });
+
+  const field3Hash = await bcrypt.hash("field123", 10);
+  const field3 = await prisma.user.upsert({
+    where: { email: "field3@test.com" },
+    update: {
+      passwordHash: field3Hash,
+      active: true,
+    },
+    create: {
+      email: "field3@test.com",
+      name: "Taylor Smith",
+      passwordHash: field3Hash,
       role: "FIELD",
       companyId: company.id,
       active: true,
@@ -96,6 +132,8 @@ async function main() {
     company: company.name,
     admin: admin.email,
     field: field.email,
+    field2: field2.email,
+    field3: field3.email,
     boqItems: boqItems.length,
   });
 }
