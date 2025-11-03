@@ -5,19 +5,25 @@ import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.datepicker.MaterialDatePicker
 import com.smartinvoice.app.data.remote.ApiService
 import com.smartinvoice.app.data.remote.models.InvoiceResponse
 import com.smartinvoice.app.databinding.ActivityDashboardBinding
 import com.smartinvoice.app.util.SharedPreferencesHelper
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
+import java.text.SimpleDateFormat
 import java.util.Locale
+import java.util.Calendar
+import java.util.Date
 
 class DashboardActivity : AppCompatActivity() {
     private lateinit var binding: ActivityDashboardBinding
     private lateinit var apiService: ApiService
     private lateinit var prefs: SharedPreferencesHelper
     private val currencyFormatter = NumberFormat.getCurrencyInstance(Locale("en", "ZA"))
+    private var startDateMillis: Long? = null
+    private var endDateMillis: Long? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,7 +41,7 @@ class DashboardActivity : AppCompatActivity() {
         binding.apply {
             // Set user info
             welcomeText.text = "Welcome back"
-            userEmailText.text = prefs.getUserEmail() ?: ""
+            userEmailText.text = prefs.getUserName() ?: ""
 
             // Setup action buttons
             createInvoiceCard.setOnClickListener {
@@ -44,6 +50,54 @@ class DashboardActivity : AppCompatActivity() {
 
             viewInvoicesCard.setOnClickListener {
                 startActivity(Intent(this@DashboardActivity, InvoiceListActivity::class.java))
+            }
+
+            // Default period = current month
+            val cal = Calendar.getInstance()
+            cal.set(Calendar.DAY_OF_MONTH, 1)
+            cal.set(Calendar.HOUR_OF_DAY, 0)
+            cal.set(Calendar.MINUTE, 0)
+            cal.set(Calendar.SECOND, 0)
+            cal.set(Calendar.MILLISECOND, 0)
+            startDateMillis = cal.timeInMillis
+            cal.add(Calendar.MONTH, 1)
+            cal.add(Calendar.MILLISECOND, -1)
+            endDateMillis = cal.timeInMillis
+            updateSelectedPeriodText()
+
+            monthPickerButton.setOnClickListener {
+                val picker = MaterialDatePicker.Builder.datePicker()
+                    .setTitleText("Select month")
+                    .build()
+                picker.addOnPositiveButtonClickListener { selectedDate ->
+                    val c = Calendar.getInstance()
+                    c.timeInMillis = selectedDate
+                    c.set(Calendar.DAY_OF_MONTH, 1)
+                    c.set(Calendar.HOUR_OF_DAY, 0)
+                    c.set(Calendar.MINUTE, 0)
+                    c.set(Calendar.SECOND, 0)
+                    c.set(Calendar.MILLISECOND, 0)
+                    startDateMillis = c.timeInMillis
+                    c.add(Calendar.MONTH, 1)
+                    c.add(Calendar.MILLISECOND, -1)
+                    endDateMillis = c.timeInMillis
+                    updateSelectedPeriodText()
+                    loadDashboardData()
+                }
+                picker.show(supportFragmentManager, "monthPicker")
+            }
+
+            rangePickerButton.setOnClickListener {
+                val picker = MaterialDatePicker.Builder.dateRangePicker()
+                    .setTitleText("Select date range")
+                    .build()
+                picker.addOnPositiveButtonClickListener { range ->
+                    startDateMillis = range.first
+                    endDateMillis = range.second
+                    updateSelectedPeriodText()
+                    loadDashboardData()
+                }
+                picker.show(supportFragmentManager, "rangePicker")
             }
         }
     }
@@ -67,74 +121,34 @@ class DashboardActivity : AppCompatActivity() {
 
     private fun updateDashboardStatistics(invoices: List<InvoiceResponse>) {
         binding.apply {
-            val totalInvoices = invoices.size
-            val totalAmount = invoices
+            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            val start = startDateMillis
+            val end = endDateMillis
+            val filtered = if (start != null && end != null) {
+                invoices.filter { invoice ->
+                    try {
+                        val d = sdf.parse(invoice.date.substring(0, minOf(10, invoice.date.length))) ?: return@filter false
+                        val time = d.time
+                        time in start..end
+                    } catch (e: Exception) { false }
+                }
+            } else invoices
+
+            val totalInvoices = filtered.size
+            val totalAmount = filtered
                 .filter { it.total != null }
                 .sumOf { it.total!!.toDoubleOrNull() ?: 0.0 }
 
-            val approvedInvoices = invoices.filter { it.status == "APPROVED" || it.status == "FINAL" }
-            val approvedAmount = approvedInvoices
-                .sumOf { it.total?.toDoubleOrNull() ?: 0.0 }
-
-            val draftPendingInvoices = invoices.filter { it.status == "DRAFT" || it.status == "SUBMITTED" }
-            val draftPendingAmount = draftPendingInvoices
-                .sumOf { it.total?.toDoubleOrNull() ?: 0.0 }
-
-            val mostCostlyInvoice = invoices
-                .filter { it.total != null }
-                .maxByOrNull { it.total!!.toDoubleOrNull() ?: 0.0 }
-
-            // Calculate highest quantity invoice (sum of all line quantities)
-            val highestQuantityInvoice = invoices
-                .map { invoice ->
-                    val totalQuantity = invoice.lines.sumOf { it.quantity.toDoubleOrNull() ?: 0.0 }
-                    invoice to totalQuantity
-                }
-                .maxByOrNull { it.second }
-
-            val averageInvoiceValue = if (totalInvoices > 0) totalAmount / totalInvoices else 0.0
-
-            // Update UI
             totalInvoicesValue.text = totalInvoices.toString()
             totalAmountValue.text = currencyFormatter.format(totalAmount)
-
-            // Show additional statistics
-            if (mostCostlyInvoice != null) {
-                mostCostlyValue.text = currencyFormatter.format(mostCostlyInvoice.total!!.toDoubleOrNull() ?: 0.0)
-                mostCostlyCard.visibility = View.VISIBLE
-            } else {
-                mostCostlyCard.visibility = View.GONE
-            }
-
-            if (highestQuantityInvoice != null) {
-                val totalQty = highestQuantityInvoice.second.toInt()
-                highestQuantityValue.text = "$totalQty items"
-                highestQuantityCard.visibility = View.VISIBLE
-            } else {
-                highestQuantityCard.visibility = View.GONE
-            }
-
-            totalApprovedValue.text = currencyFormatter.format(approvedAmount)
-            totalDraftPendingValue.text = currencyFormatter.format(draftPendingAmount)
-            averageValue.text = currencyFormatter.format(averageInvoiceValue)
-
-            // Calculate this month's invoices
-            val currentMonth = java.util.Calendar.getInstance().get(java.util.Calendar.MONTH)
-            val currentYear = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
-            val thisMonthInvoices = invoices.filter { invoice ->
-                try {
-                    val invoiceDate = java.text.SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                        .parse(invoice.date.substring(0, minOf(10, invoice.date.length))) ?: return@filter false
-                    val cal = java.util.Calendar.getInstance()
-                    cal.time = invoiceDate
-                    cal.get(java.util.Calendar.MONTH) == currentMonth &&
-                            cal.get(java.util.Calendar.YEAR) == currentYear
-                } catch (e: Exception) {
-                    false
-                }
-            }
-            thisMonthValue.text = thisMonthInvoices.size.toString()
         }
+    }
+
+    private fun updateSelectedPeriodText() {
+        val sdf = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+        val start = startDateMillis?.let { sdf.format(Date(it)) } ?: ""
+        val end = endDateMillis?.let { sdf.format(Date(it)) } ?: ""
+        binding.selectedPeriodText.text = if (start.isNotEmpty() && end.isNotEmpty()) "$start - $end" else "All time"
     }
 }
 
