@@ -55,3 +55,5 @@ yarn-error.log*
 tmp/
 temp/
 
+# lock files
+**/*package-lock.json
