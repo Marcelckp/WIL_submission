@@ -429,8 +429,8 @@
                             android:layout_height="wrap_content"
                             android:text="0"
                             android:textSize="@dimen/text_size_medium"
-                            android:padding="@dimen/padding_medium"
-                            android:inputType="numberDecimal" />
+                            android:padding="24dp" 
+                            android:paddingTop="30dp" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <com.google.android.material.button.MaterialButton

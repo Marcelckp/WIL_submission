@@ -26,7 +26,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="@dimen/padding_large">
+                android:padding="10dp">
 
                 <!-- Invoice Number and Status -->
                 <LinearLayout
@@ -79,7 +79,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
                     android:background="@color/divider_grey"
-                    android:layout_marginBottom="@dimen/margin_medium" />
+                    android:layout_marginBottom="@dimen/margin_medium" 
+                    android:layout_marginTop="@dimen/margin_small" />
 
                 <TextView
                     android:id="@+id/customerNameText"
@@ -89,6 +90,7 @@
                     android:textSize="@dimen/text_size_large"
                     android:textStyle="bold"
                     android:textColor="@color/text_dark"
+                    android:layout_marginTop="@dimen/margin_small"
                     android:layout_marginBottom="@dimen/margin_small" />
 
                 <TextView
@@ -98,6 +100,7 @@
                     android:text="Project Site"
                     android:textSize="@dimen/text_size_medium"
                     android:textColor="@color/text_grey"
+                    android:layout_marginTop="@dimen/margin_small"
                     android:layout_marginBottom="@dimen/margin_small" />
 
                 <TextView
@@ -106,7 +109,9 @@
                     android:layout_height="wrap_content"
                     android:text="Prepared By"
                     android:textSize="@dimen/text_size_small"
-                    android:textColor="@color/text_grey" />
+                    android:textColor="@color/text_grey"
+                    android:layout_marginTop="@dimen/margin_small"
+                    android:layout_marginBottom="@dimen/margin_small" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -134,7 +139,8 @@
                     android:textSize="@dimen/text_size_large"
                     android:textStyle="bold"
                     android:textColor="@color/text_dark"
-                    android:layout_marginBottom="@dimen/margin_medium" />
+                    android:layout_marginBottom="@dimen/margin_medium"
+                    android:layout_marginTop="@dimen/margin_small" />
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/itemsRecyclerView"
@@ -157,7 +163,8 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
-                        android:layout_marginBottom="@dimen/margin_small">
+                        android:layout_marginBottom="@dimen/margin_small"
+                        android:layout_marginTop="@dimen/margin_small">
 
                         <TextView
                             android:layout_width="0dp"
@@ -165,7 +172,9 @@
                             android:layout_weight="1"
                             android:text="@string/subtotal"
                             android:textColor="@color/text_white"
-                            android:textSize="@dimen/text_size_medium" />
+                            android:textSize="@dimen/text_size_medium"
+                            android:layout_marginTop="@dimen/margin_small" 
+                            android:layout_marginBottom="@dimen/margin_small" />
 
                         <TextView
                             android:id="@+id/subtotalText"
@@ -173,7 +182,10 @@
                             android:layout_height="wrap_content"
                             android:text="R0.00"
                             android:textColor="@color/text_white"
-                            android:textSize="@dimen/text_size_medium" />
+                            android:textSize="@dimen/text_size_medium"
+                            android:layout_marginTop="@dimen/margin_small" 
+                            android:layout_marginBottom="@dimen/margin_small" />
+
                     </LinearLayout>
 
                     <LinearLayout
@@ -181,7 +193,8 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
-                        android:layout_marginBottom="@dimen/margin_small">
+                        android:layout_marginBottom="@dimen/margin_small"
+                        android:layout_marginTop="@dimen/margin_small">
 
                         <TextView
                             android:layout_width="0dp"
@@ -189,7 +202,9 @@
                             android:layout_weight="1"
                             android:text="@string/vat"
                             android:textColor="@color/text_white"
-                            android:textSize="@dimen/text_size_medium" />
+                            android:textSize="@dimen/text_size_medium"
+                            android:layout_marginTop="@dimen/margin_small" 
+                            android:layout_marginBottom="@dimen/margin_small" />
 
                         <TextView
                             android:id="@+id/vatText"
@@ -197,7 +212,9 @@
                             android:layout_height="wrap_content"
                             android:text="R0.00"
                             android:textColor="@color/text_white"
-                            android:textSize="@dimen/text_size_medium" />
+                            android:textSize="@dimen/text_size_medium"
+                            android:layout_marginTop="@dimen/margin_small"
+                            android:layout_marginBottom="@dimen/margin_small" />
                     </LinearLayout>
 
                     <View
@@ -219,7 +236,9 @@
                             android:text="@string/total"
                             android:textColor="@color/text_white"
                             android:textSize="@dimen/text_size_large"
-                            android:textStyle="bold" />
+                            android:textStyle="bold"
+                            android:layout_marginTop="@dimen/margin_small"
+                            android:layout_marginBottom="@dimen/margin_small" />
 
                         <TextView
                             android:id="@+id/totalText"
@@ -228,7 +247,9 @@
                             android:text="R0.00"
                             android:textColor="@color/text_white"
                             android:textSize="@dimen/text_size_extra_large"
-                            android:textStyle="bold" />
+                            android:textStyle="bold"
+                            android:layout_marginTop="@dimen/margin_small"
+                            android:layout_marginBottom="@dimen/margin_small" />
                     </LinearLayout>
                 </LinearLayout>
             </LinearLayout>
@@ -258,7 +279,8 @@
                     android:textSize="@dimen/text_size_large"
                     android:textStyle="bold"
                     android:textColor="@color/text_dark"
-                    android:layout_marginBottom="@dimen/margin_medium" />
+                    android:layout_marginBottom="@dimen/margin_medium"
+                    android:layout_marginTop="@dimen/margin_small" />
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/photosRecyclerView"
@@ -273,8 +295,9 @@
                     android:text="@string/no_photos"
                     android:textColor="@color/text_grey"
                     android:textSize="@dimen/text_size_medium"
-                    android:layout_marginTop="@dimen/margin_medium"
-                    android:visibility="gone" />
+                    android:visibility="gone"
+                    android:layout_marginBottom="@dimen/margin_small"
+                    android:layout_marginTop="@dimen/margin_small" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -302,14 +325,16 @@
                     android:textSize="@dimen/text_size_large"
                     android:textStyle="bold"
                     android:textColor="@color/text_dark"
-                    android:layout_marginBottom="@dimen/margin_medium" />
+                    android:layout_marginBottom="@dimen/margin_medium"
+                    android:layout_marginTop="@dimen/margin_small" />
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/commentsRecyclerView"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:nestedScrollingEnabled="false"
-                    android:layout_marginBottom="@dimen/margin_medium" />
+                    android:layout_marginBottom="@dimen/margin_medium"
+                    android:layout_marginTop="@dimen/margin_small" />
 
                 <TextView
                     android:id="@+id/noCommentsText"
@@ -336,7 +361,9 @@
                         app:boxStrokeWidth="0dp"
                         app:boxBackgroundMode="filled"
                         app:boxBackgroundColor="@color/input_background"
-                        android:layout_marginEnd="@dimen/margin_small">
+                        android:layout_marginEnd="@dimen/margin_small"
+                        android:layout_marginTop="@dimen/margin_small"
+                        android:layout_marginBottom="@dimen/margin_small">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/commentEditText"
@@ -344,7 +371,9 @@
                             android:layout_height="wrap_content"
                             android:textSize="@dimen/text_size_medium"
                             android:padding="@dimen/padding_medium"
-                            android:maxLines="3" />
+                            android:maxLines="3"
+                            android:layout_marginTop="@dimen/margin_small"
+                            android:layout_marginBottom="@dimen/margin_small" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <com.google.android.material.button.MaterialButton
@@ -352,7 +381,9 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/add"
-                        style="@style/Button.Secondary" />
+                        style="@style/Button.Secondary"
+                        android:layout_marginTop="@dimen/margin_small"
+                        android:layout_marginBottom="@dimen/margin_small" />
                 </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
@@ -373,6 +404,8 @@
                 android:text="@string/edit"
                 style="@style/Button.Secondary"
                 android:layout_marginEnd="@dimen/margin_small"
+                android:layout_marginTop="@dimen/margin_small"
+                android:layout_marginBottom="@dimen/margin_small"
                 android:visibility="gone" />
 
             <com.google.android.material.button.MaterialButton
@@ -383,6 +416,8 @@
                 android:text="@string/submit"
                 style="@style/Button.Primary"
                 android:layout_marginStart="@dimen/margin_small"
+                android:layout_marginTop="@dimen/margin_small"
+                android:layout_marginBottom="@dimen/margin_small"
                 android:visibility="gone" />
 
             <com.google.android.material.button.MaterialButton
@@ -393,6 +428,8 @@
                 android:text="@string/view_pdf"
                 style="@style/Button.Secondary"
                 android:layout_marginStart="@dimen/margin_small"
+                android:layout_marginTop="@dimen/margin_small"
+                android:layout_marginBottom="@dimen/margin_small"
                 android:visibility="gone" />
         </LinearLayout>
 

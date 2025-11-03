@@ -5,7 +5,7 @@ import { invoicesRouter } from './routes/invoices.js';
 import { companyRouter } from './routes/company.js';
 import { usersRouter } from './routes/users.js';
 
-const app = express();
+export const app = express();
 
 // CORS middleware
 app.use((req, res, next) => {
@@ -31,8 +31,10 @@ app.get('/api/health', (_req, res) => {
 });
 
 const port = process.env.PORT ? Number(process.env.PORT) : 3000;
-app.listen(port, () => {
-  console.log(`Smart Invoice API listening on http://localhost:${port}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(port, () => {
+    console.log(`Smart Invoice API listening on http://localhost:${port}`);
+  });
+}
 
 
