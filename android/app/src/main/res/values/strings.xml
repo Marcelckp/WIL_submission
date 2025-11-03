@@ -82,7 +82,7 @@
     <string name="submitted">Submitted</string>
     <string name="approved">Approved</string>
     <string name="rejected">Rejected</string>
-    <string name="final">Final</string>
+    <string name="status_final">Final</string>
     <string name="draft">Draft</string>
 </resources>
 

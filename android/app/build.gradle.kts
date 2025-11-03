@@ -4,6 +4,11 @@ plugins {
     id("kotlin-kapt")
 }
 
+configurations.all {
+    exclude(group = "com.android.support")
+    exclude(group = "android.support")
+}
+
 android {
     namespace = "com.smartinvoice.app"
     compileSdk = 34
@@ -79,8 +84,11 @@ dependencies {
     // Image loading
     implementation("com.github.bumptech.glide:glide:4.16.0")
     
-    // PDF viewer
-    implementation("com.github.barteksc:android-pdf-viewer:3.2.0-beta.1")
+    // PDF viewer (active fork published via JitPack)
+    implementation("com.github.mhiew:android-pdf-viewer:3.2.0-beta.1") {
+        exclude(group = "com.android.support")
+        exclude(group = "android.support")
+    }
     
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")

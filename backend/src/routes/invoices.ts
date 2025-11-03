@@ -169,6 +169,105 @@ invoicesRouter.get("/", authenticateToken, async (req: AuthRequest, res) => {
   res.json({ invoices, total, limit, offset });
 });
 
+// Metrics and aggregates for dashboard
+invoicesRouter.get(
+  "/metrics",
+  authenticateToken,
+  async (req: AuthRequest, res) => {
+    const companyId = req.user!.companyId;
+    const invoices = await prisma.invoice.findMany({
+      where: { companyId },
+      select: {
+        id: true,
+        total: true,
+        status: true,
+        createdBy: true,
+        customerName: true,
+        invoiceNumber: true,
+        createdAt: true,
+      },
+    });
+
+    const parseAmount = (s?: string | null) => (s ? parseFloat(s) : 0);
+
+    let totalRevenue = 0;
+    let approvedRevenue = 0;
+    let draftPendingRevenue = 0;
+    let largestInvoice: any = null;
+
+    const countByOperator: Record<string, number> = {};
+    const amountByOperator: Record<string, number> = {};
+
+    for (const inv of invoices) {
+      const amount = parseAmount(inv.total);
+      totalRevenue += amount;
+      if (inv.status === "FINAL" || inv.status === "APPROVED")
+        approvedRevenue += amount;
+      if (inv.status === "DRAFT" || inv.status === "SUBMITTED")
+        draftPendingRevenue += amount;
+
+      // largest invoice by total
+      if (!largestInvoice || amount > largestInvoice.total) {
+        largestInvoice = {
+          id: inv.id,
+          invoiceNumber: inv.invoiceNumber,
+          customerName: inv.customerName,
+          total: amount,
+          createdAt: inv.createdAt,
+        };
+      }
+
+      // operator metrics (by createdBy)
+      countByOperator[inv.createdBy] =
+        (countByOperator[inv.createdBy] || 0) + 1;
+      amountByOperator[inv.createdBy] =
+        (amountByOperator[inv.createdBy] || 0) + amount;
+    }
+
+    // Fetch operator names
+    const operatorIds = Array.from(
+      new Set(
+        Object.keys(countByOperator).concat(Object.keys(amountByOperator))
+      )
+    );
+    const users = await prisma.user.findMany({
+      where: { id: { in: operatorIds } },
+      select: { id: true, name: true, email: true },
+    });
+    const idToUser = Object.fromEntries(users.map((u) => [u.id, u]));
+
+    const topOperatorsByCount = Object.entries(countByOperator)
+      .map(([userId, count]) => ({
+        userId,
+        count: count as number,
+        name: idToUser[userId]?.name || idToUser[userId]?.email || "Unknown",
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+
+    const topOperatorsByAmount = Object.entries(amountByOperator)
+      .map(([userId, amount]) => ({
+        userId,
+        amount: amount as number,
+        name: idToUser[userId]?.name || idToUser[userId]?.email || "Unknown",
+      }))
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 10);
+
+    res.json({
+      totals: {
+        totalRevenue: Number(totalRevenue.toFixed(2)),
+        approvedRevenue: Number(approvedRevenue.toFixed(2)),
+        draftPendingRevenue: Number(draftPendingRevenue.toFixed(2)),
+        totalCount: invoices.length,
+      },
+      largestInvoice,
+      topOperatorsByCount,
+      topOperatorsByAmount,
+    });
+  }
+);
+
 // Get invoice
 invoicesRouter.get("/:id", authenticateToken, async (req: AuthRequest, res) => {
   const invoice = await prisma.invoice.findUnique({

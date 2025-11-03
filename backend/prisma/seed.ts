@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { cityPowerBoqItems } from "./boq-data.js";
 
 const prisma = new PrismaClient();
 
@@ -52,10 +53,50 @@ async function main() {
     },
   });
 
+  // Create initial BOQ for City Power using data from boq-data.ts
+  const boqItems = cityPowerBoqItems;
+
+  // Check if BOQ already exists to avoid duplicates on re-seed
+  const existingBoq = await prisma.boq.findFirst({
+    where: {
+      companyId: company.id,
+      name: "City Power Initial BOQ",
+    },
+  });
+
+  if (!existingBoq && boqItems.length > 0) {
+    // Create BOQ with version 1
+    const boq = await prisma.boq.create({
+      data: {
+        companyId: company.id,
+        name: "City Power Initial BOQ",
+        version: 1,
+        uploadedBy: admin.id,
+        status: "ACTIVE",
+        items: {
+          create: boqItems.map((item) => ({
+            sapNumber: item.sapNumber,
+            shortDescription: item.shortDescription,
+            unit: item.unit,
+            rate: item.rate,
+            category: item.category || null,
+            searchableText:
+              `${item.sapNumber} ${item.shortDescription}`.toLowerCase(),
+          })),
+        },
+      },
+    });
+
+    console.log(`Created BOQ with ${boqItems.length} items`);
+  } else if (existingBoq) {
+    console.log(`BOQ already exists with ID: ${existingBoq.id}`);
+  }
+
   console.log("Seed completed:", {
     company: company.name,
     admin: admin.email,
     field: field.email,
+    boqItems: boqItems.length,
   });
 }
 

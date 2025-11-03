@@ -87,6 +87,56 @@ boqRouter.get("/", authenticateToken, async (req: AuthRequest, res) => {
   res.json(boqs);
 });
 
+// BOQ details (with items, optional search and pagination)
+boqRouter.get("/:id", authenticateToken, async (req: AuthRequest, res) => {
+  const { id } = req.params;
+  const q = String(req.query.q ?? "").toLowerCase();
+  const limit = Math.min(Number(req.query.limit ?? 50), 500);
+  const offset = Math.max(Number(req.query.offset ?? 0), 0);
+
+  const boq = await prisma.boq.findFirst({
+    where: { id, companyId: req.user!.companyId },
+    include: { items: true },
+  });
+
+  if (!boq) return res.sendStatus(404);
+
+  const itemsAll = boq.items;
+  const filtered = q
+    ? itemsAll.filter(
+        (i) =>
+          i.sapNumber.toLowerCase().includes(q) ||
+          i.shortDescription.toLowerCase().includes(q) ||
+          (i.searchableText?.toLowerCase().includes(q) ?? false) ||
+          (i.category?.toLowerCase().includes(q) ?? false) ||
+          i.unit.toLowerCase().includes(q) ||
+          i.rate.toLowerCase().includes(q)
+      )
+    : itemsAll;
+
+  const slice = filtered.slice(offset, offset + limit).map((i) => ({
+    sapNumber: i.sapNumber,
+    shortDescription: i.shortDescription,
+    unit: i.unit,
+    rate: i.rate,
+    category: i.category,
+  }));
+
+  res.json({
+    id: boq.id,
+    name: boq.name,
+    version: boq.version,
+    status: boq.status,
+    createdAt: boq.createdAt,
+    uploadedBy: boq.uploadedBy,
+    counts: { totalItems: itemsAll.length, filtered: filtered.length },
+    items: slice,
+    limit,
+    offset,
+    q,
+  });
+});
+
 // Activate BOQ version (ADMIN only)
 boqRouter.patch("/:id/activate", authenticateToken, requireRole("ADMIN"), async (req: AuthRequest, res) => {
   const boq = await prisma.boq.findUnique({
@@ -145,4 +195,38 @@ boqRouter.get("/active/items", authenticateToken, async (req: AuthRequest, res) 
   }));
 
   res.json({ version: activeBoq.version, items: result });
+});
+
+// Export BOQ as CSV (active by default; optional version query)
+boqRouter.get("/export", authenticateToken, async (req: AuthRequest, res) => {
+  const versionParam = req.query.version ? Number(req.query.version) : undefined;
+  const where: any = { companyId: req.user!.companyId };
+  if (versionParam) {
+    where.version = versionParam;
+  } else {
+    where.status = "ACTIVE";
+  }
+
+  const boq = await prisma.boq.findFirst({ where, include: { items: true }, orderBy: versionParam ? undefined : { version: "desc" } });
+  if (!boq) {
+    return res.status(404).json({ error: "No BOQ found to export" });
+  }
+
+  const header = ["SAP #", "SHORT DESCRIPTION", "RATE", "UNIT", "CATEGORY"]; 
+  const lines = boq.items.map((i) => [i.sapNumber, i.shortDescription, i.rate, i.unit, i.category || ""]);
+
+  // Simple CSV serialization with escaping
+  const escape = (val: string) => {
+    const v = (val ?? "").toString();
+    if (/[",\n]/.test(v)) return '"' + v.replace(/"/g, '""') + '"';
+    return v;
+  };
+  const csv = [header, ...lines].map((row) => row.map(escape).join(",")).join("\n");
+
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="boq-v${boq.version}.csv"`
+  );
+  res.send(csv);
 });

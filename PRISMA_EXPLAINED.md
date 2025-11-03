@@ -20,36 +20,36 @@
 
 ```text
 ┌──────────────────────────────────────────────────────────┐
-│                   Your Application                        │
-│                                                           │
+│                   Your Application                       │
+│                                                          │
 │  import { PrismaClient } from '@prisma/client'           │
 │  const prisma = new PrismaClient()                       │
 │  await prisma.user.create({ ... })                       │
-│                                                           │
+│                                                          │
 └────────────────────────────┬─────────────────────────────┘
                              ↓
 ┌──────────────────────────────────────────────────────────┐
 │              Prisma Client (Auto-generated)              │
-│                                                           │
+│                                                          │
 │  • Type-safe queries                                     │
 │  • IntelliSense support                                  │
-│  • Query builder                                        │
-│  • Connection pooling                                   │
-│                                                           │
+│  • Query builder                                         │
+│  • Connection pooling                                    │
+│                                                          │
 └────────────────────────────┬─────────────────────────────┘
                              ↓
 ┌──────────────────────────────────────────────────────────┐
-│                    Prisma Schema                          │
-│                                                           │
+│                    Prisma Schema                         │
+│                                                          │
 │  • schema.prisma (single source of truth)                │
 │  • Models define your tables                             │
 │  • Migrations version your changes                       │
-│                                                           │
+│                                                          │
 └────────────────────────────┬─────────────────────────────┘
                              ↓
 ┌──────────────────────────────────────────────────────────┐
-│                  Your Database (SQLite,                   │
-│                  PostgreSQL, MySQL, etc.)                 │
+│                  Your Database (SQLite,                  │
+│                  PostgreSQL, MySQL, etc.)                │
 └──────────────────────────────────────────────────────────┘
 ```
 
