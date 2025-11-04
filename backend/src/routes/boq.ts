@@ -102,6 +102,88 @@ boqRouter.get("/", authenticateToken, async (req: AuthRequest, res) => {
   res.json(boqs);
 });
 
+// Export BOQ as CSV (active by default; optional version query)
+// IMPORTANT: This route must come BEFORE /:id to avoid route conflicts
+boqRouter.get("/export", authenticateToken, async (req: AuthRequest, res) => {
+  const versionParam = req.query.version ? Number(req.query.version) : undefined;
+  const where: any = { companyId: req.user!.companyId };
+  if (versionParam) {
+    where.version = versionParam;
+  } else {
+    where.status = "ACTIVE";
+  }
+
+  const boq = await prisma.boq.findFirst({ where, include: { items: true }, orderBy: versionParam ? undefined : { version: "desc" } });
+  if (!boq) {
+    return res.status(404).json({ error: "No BOQ found to export" });
+  }
+
+  const header = ["SAP #", "SHORT DESCRIPTION", "RATE", "UNIT", "CATEGORY"]; 
+  const lines = boq.items.map((i) => [i.sapNumber, i.shortDescription, i.rate, i.unit, i.category || ""]);
+
+  // Simple CSV serialization with escaping
+  const escape = (val: string) => {
+    const v = (val ?? "").toString();
+    if (/[",\n]/.test(v)) return '"' + v.replace(/"/g, '""') + '"';
+    return v;
+  };
+  const csv = [header, ...lines].map((row) => row.map(escape).join(",")).join("\n");
+
+  // Store CSV in Firebase Storage for future reference
+  try {
+    const csvBuffer = Buffer.from(csv, "utf-8");
+    const csvFileName = `boq-v${boq.version}-${Date.now()}.csv`;
+    const csvPath = `boq/${req.user!.companyId}/${csvFileName}`;
+    const csvUrl = await uploadBlob("boq", csvPath, csvBuffer, "text/csv");
+    console.log(`BOQ CSV exported and stored: ${csvUrl}`);
+  } catch (error) {
+    console.error("Failed to store CSV in Firebase Storage:", error);
+    // Continue even if storage fails - CSV is still sent to client
+  }
+
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="boq-v${boq.version}.csv"`
+  );
+  res.send(csv);
+});
+
+// Search active BOQ items
+boqRouter.get("/active/items", authenticateToken, async (req: AuthRequest, res) => {
+  const activeBoq = await prisma.boq.findFirst({
+    where: { companyId: req.user!.companyId, status: "ACTIVE" },
+    include: { items: true },
+  });
+
+  if (!activeBoq) {
+    return res.json({ version: 0, items: [] });
+  }
+
+  const q = String(req.query.q ?? "").toLowerCase();
+  const limit = Math.min(Number(req.query.limit ?? 20), 1000);
+
+  let items = activeBoq.items;
+  if (q) {
+    items = activeBoq.items.filter(
+      (i) =>
+        i.sapNumber.toLowerCase().includes(q) ||
+        i.shortDescription.toLowerCase().includes(q) ||
+        i.searchableText?.toLowerCase().includes(q)
+    );
+  }
+
+  const result = items.slice(0, limit).map((item) => ({
+    sapNumber: item.sapNumber,
+    shortDescription: item.shortDescription,
+    unit: item.unit,
+    rate: item.rate,
+    category: item.category,
+  }));
+
+  res.json({ version: activeBoq.version, items: result });
+});
+
 // BOQ details (with items, optional search and pagination)
 boqRouter.get("/:id", authenticateToken, async (req: AuthRequest, res) => {
   const { id } = req.params;
@@ -175,85 +257,4 @@ boqRouter.patch("/:id/activate", authenticateToken, requireRole("ADMIN"), async 
   });
 
   res.json(updated);
-});
-
-// Search active BOQ items
-boqRouter.get("/active/items", authenticateToken, async (req: AuthRequest, res) => {
-  const activeBoq = await prisma.boq.findFirst({
-    where: { companyId: req.user!.companyId, status: "ACTIVE" },
-    include: { items: true },
-  });
-
-  if (!activeBoq) {
-    return res.json({ version: 0, items: [] });
-  }
-
-  const q = String(req.query.q ?? "").toLowerCase();
-  const limit = Math.min(Number(req.query.limit ?? 20), 1000);
-
-  let items = activeBoq.items;
-  if (q) {
-    items = activeBoq.items.filter(
-      (i) =>
-        i.sapNumber.toLowerCase().includes(q) ||
-        i.shortDescription.toLowerCase().includes(q) ||
-        i.searchableText?.toLowerCase().includes(q)
-    );
-  }
-
-  const result = items.slice(0, limit).map((item) => ({
-    sapNumber: item.sapNumber,
-    shortDescription: item.shortDescription,
-    unit: item.unit,
-    rate: item.rate,
-    category: item.category,
-  }));
-
-  res.json({ version: activeBoq.version, items: result });
-});
-
-// Export BOQ as CSV (active by default; optional version query)
-boqRouter.get("/export", authenticateToken, async (req: AuthRequest, res) => {
-  const versionParam = req.query.version ? Number(req.query.version) : undefined;
-  const where: any = { companyId: req.user!.companyId };
-  if (versionParam) {
-    where.version = versionParam;
-  } else {
-    where.status = "ACTIVE";
-  }
-
-  const boq = await prisma.boq.findFirst({ where, include: { items: true }, orderBy: versionParam ? undefined : { version: "desc" } });
-  if (!boq) {
-    return res.status(404).json({ error: "No BOQ found to export" });
-  }
-
-  const header = ["SAP #", "SHORT DESCRIPTION", "RATE", "UNIT", "CATEGORY"]; 
-  const lines = boq.items.map((i) => [i.sapNumber, i.shortDescription, i.rate, i.unit, i.category || ""]);
-
-  // Simple CSV serialization with escaping
-  const escape = (val: string) => {
-    const v = (val ?? "").toString();
-    if (/[",\n]/.test(v)) return '"' + v.replace(/"/g, '""') + '"';
-    return v;
-  };
-  const csv = [header, ...lines].map((row) => row.map(escape).join(",")).join("\n");
-
-  // Store CSV in Firebase Storage for future reference
-  try {
-    const csvBuffer = Buffer.from(csv, "utf-8");
-    const csvFileName = `boq-v${boq.version}-${Date.now()}.csv`;
-    const csvPath = `boq/${req.user!.companyId}/${csvFileName}`;
-    const csvUrl = await uploadBlob("boq", csvPath, csvBuffer, "text/csv");
-    console.log(`BOQ CSV exported and stored: ${csvUrl}`);
-  } catch (error) {
-    console.error("Failed to store CSV in Firebase Storage:", error);
-    // Continue even if storage fails - CSV is still sent to client
-  }
-
-  res.setHeader("Content-Type", "text/csv; charset=utf-8");
-  res.setHeader(
-    "Content-Disposition",
-    `attachment; filename="boq-v${boq.version}.csv"`
-  );
-  res.send(csv);
 });

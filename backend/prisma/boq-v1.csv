@@ -1,0 +1,561 @@
+SAP #,SHORT DESCRIPTION,RATE,UNIT,CATEGORY
+10,"Soil dig, backfill, comp hand pickable",126.63,M3,
+100,Interlock blocks lift & stack (retaining),84.17,M2,
+1000,"Install, connect 1 phase kW/h meter & 80A mcb & <25mm2 cable",368.82,EA,
+1010,"Install, connect 1 phase kW/h meter & 80A mcb & <40m cable",531.14,EA,
+1020,500 v megger test between cores and core,149.01,EA,
+1022,FUSE LV 250A 80KA TYPE NH-1 DIST,208.48,EA,Low Voltage Fuses
+1030,Earth line loop impedance test per circuit,111.37,EA,
+1034,"Fuse Assembly:P/Mounted,Holders & Arm",1052.34,EA,Low Voltage Fuses
+1040,Fit main Circuit Breaker to MSS or LV distribution board,396.67,EA,
+1050,Fit add main isolator to LV distribution Board,348.77,EA,
+1060,Install LV distribution board,617.64,EA,
+1070,Install LV Distribution Board fuse,477.16,EA,
+10786,"Strapping:20 X 0.7mm,S/S 304,Smooth",326.52,EA,Network Accessories
+10787,"Buckle:20mm,S/S Grade 304,CP_TSSPEC_092",163.25,EA,Network Accessories
+1080,Fit additional fuse,266.78,EA,
+1090,Replace LV fuse,136.21,EA,
+110,Lifting & stacking of paving bricks,71.11,M2,
+1100,Replace LV fuse & carriage,153.92,EA,
+1110,Install LV Pillar Box ( Fibre) & Base,460.79,EA,
+1120,Install LV Distribution Board (steel) & plinth,475.52,EA,
+1130,Installation & connection Main Circuit Breaker in Distribution Board,285.82,EA,
+1140,Replace existing low voltage 1 phase circuit breaker,208.23,EA,
+1150,Replace existing low voltage 3 phase circuit breaker,227.08,EA,
+1160,Reset LV MCB,110.63,EA,
+1162,CAB 132 XLPE 1000 1C AL CSA,2057.11,M,High Voltage Cable
+1170,Repair loose connection,76.88,EA,
+1180,Replace jumpers,189.88,EA,
+1190,Jumper between switch gear and transformer LV/MV,245.49,EA,
+120,Concrete slabs lifting & stacking,110.94,M2,
+1200,"Redundancy cable out open trench, remove",43.57,M,
+1210,Decommission redundant Bare OHL conductor & removal & offload,75.49,M,
+1220,"Decommission redundant pole remove, load and transfer",490.51,EA,
+1230,"Decommission redundant MV switchgear, remove, load and transfer",1646.36,EA,
+1240,"Decommission redundant MSS, remove, load and transfer",2887.1,EA,
+1250,"Decommission redundant transformer, remove, load, transfer",2220.6,EA,
+1260,"Decommission redundant pole transformer remove, load and transfer",1851.64,EA,
+1270,Cleaning vegetation & rubble in TSS Servitutes,71.79,M2,
+1280,straightening of skew poles,93.73,M2,
+1290,First line inspection of load centres,240.3,EA,
+130,Lift & stack preservation of lawn grass,88.45,M2,
+1300,Maintaining Load centre Transformer ( Including O,3659.78,EA,
+1310,Maintaining Load centre MV Switchgear,3729.61,EA,
+1320,Maintaining Load centre LV Switch gear ( Including K,2468.93,EA,
+1330,Maintaining Load centre S/I control pa,1365.79,EA,
+1340,Prime cost sum for community liaison off,9500,EA,
+1350,Prime cost sum for special materials,36205.67,EA,
+1360,Establishment of site camp,12791.82,EA,
+1370,Transporting of 8/10.5 fibre glass poles,455.29,EA,
+1380,Transport steel/wood 5/7.2/9.2/11.5m st,406.77,EA,
+1390,Transport Steel double arm curved spig,378.82,EA,
+140,Reinstate used inter lock blocks,135.76,M2,
+1400,Transport steel 17m straight pole,550.38,EA,
+1410,"Transport concrete 7 to 7,5 metre pole",481.74,EA,
+1412,"TX: 315kVA, 11kV/415V, DYN11",233171.03,EA,Distribution Transformers
+1418,"TRF:500kV.A,11/0.415kV SGL Ratio,DYN11",322804.16,EA,Distribution Transformers
+1420,"Transport concrete 9 to 9,3 metre pole",514.11,EA,
+1430,Transport concrete 10 to 11 metre pole,613.2,EA,
+1440,"Install 11.5 D-Curved pole, lmr & Lamp",470.99,EA,
+1441,TRM 11 XLPE 95 - 185 3C INDOOR,7051.07,EA,Cable Terminations
+1450,"Install 11.5m Curved pole, lmr & Lamp",459.17,EA,
+1460,"Install 9.2m Curved pole, lmr & Lamp",454.2,EA,
+1470,"Installation of 17m stl pole, lmr & Lamp",798.82,EA,
+1480,"Install 11.5m stl pole, lmr & Lamp",563.82,EA,
+1490,"Install 7.2/9.2m stl pole, lmr & Lamp",427.69,EA,
+150,Supply and install new inter lock blocks,219.73,M2,
+1500,"Install 8/10.5m grp pole, lmr & Lamp",388.78,EA,
+1510,Plant concrete 7 to 7.5 metre pole,364.07,EA,
+1511,CAB LV PVC FLEXBLE 95 1C CU YELLW RB3922,544.87,M,House Wire
+1520,"Plant concrete 9 to 9,3 metre pole",372.48,EA,
+1530,Plant concrete 10 to 11 metre pole,425.19,EA,
+1540,Plant concrete 11 & 7 m pole structor,559.7,EA,
+1550,plant 8/10.5 metre grp pole.,365.81,EA,
+1560,Install 7.2/9 m steel pole including insulation,401.04,EA,
+1570,Install 11.5m steel pole including insulation,409.74,EA,
+1580,Poles with more than one lintel,385.62,EA,
+1590,Poles with one lintel,257.04,EA,
+160,Reinstate used concrete slabs,143.92,M2,
+1600,Single strain fittings (120/95/50/25),132.07,EA,
+1610,Double strain fitting for (120/95/50/25),139.6,EA,
+1620,Single suspension fitting_(120/95/50),121.88,EA,
+1630,T-off strain fitting for (120/95/50/25),127.16,EA,
+1640,Install ABC single strain fitting (120-50),121.31,EA,
+1650,Install ABC single suspension fitting (120-50),120,EA,
+1660,Install ABC double strain fitting (120-50),127.98,EA,
+1670,Install ABC t-off strain fitting (120-50),123.2,EA,
+1680,Install IP clamp for tap-off one bolt,96.96,EA,
+1690,Install IP clamp for tap-off two bolt,82.06,EA,
+1691,"RMU:11kV,SF6,3 X 360A SD (Outdoor)",274489.51,EA,Ring Main Units
+1692,"RMU:11kV,SF6 4 X 360A SD (Indoor)",254304.63,EA,Ring Main Units
+1693,"RMU:11kV,SF6 4 X 630A SD (Outdoor)",335490.34,EA,Ring Main Units
+1694,"RMU:11kV,SF6 2 X 630A SD & CB (Indoor)",218733.55,EA,Ring Main Units
+1697,"RMU:11kV,SF6 3 X 630A SD & CB (Outdoor)",370153.63,EA,Ring Main Units
+170,Supply and install new concrete slabs,241.24,M2,
+1700,Joint ABC 120 mm2 x 3 + n + e + s/l,272.07,EA,
+1710,Joint ABC 95 mm2 x 3 + n/e + s/l,236.35,EA,
+1720,Joint ABC 70 mm2 x 3 + n/e + s/l,214.86,EA,
+1721,CAB LV PVC 16 1C CU BLUE (RB3925),341.09,M,House Wire
+1722,"CAB LV PVC 2,5 1C CU RED",133.32,M,House Wire
+1723,"CAB LV PVC 2,5 1C CU BLACK",361.49,M,House Wire
+1724,"CAB LV PVC 2,5 1C CU BLUE",147.04,M,House Wire
+1725,"CAB LV PVC 2,5 1C CU YELLOW & GREEN",144.37,M,House Wire
+1726,CAB LV PVC 16 1C CU RED (RB3923),349.96,M,House Wire
+1727,CAB LV PVC 16 1C CU BLACK (RB3926),352.68,M,House Wire
+1730,Joint ABC 50 mm2 x 3 + n/e + s/l,198.43,EA,
+1740,Joint ABC 25 mm2 x 3 (s/l),169.52,EA,
+1750,Joint ABC 10 mm2 split concentric LV cable,119.83,EA,
+1760,Terminate ABC 120 mm2 x 3 + n + e + s/l,338.45,EA,
+1770,Terminate ABC 95 mm2 x 3 + n/e + s/l,273.04,EA,
+1780,Terminate ABC 70 mm2 x 3 + n/e + s/l,297.48,EA,
+1790,Terminate ABC 50 mm2 x 3 + n/e + s/l,255.63,EA,
+180,Reinstate used paving bricks,116.28,M2,
+1800,Terminate ABC 25 mm2 x 3 (s/l),185.81,EA,
+1810,Inspection of LV overhead lines (per circuit),49.82,EA,
+1820,Inspection of MV overhead lines (per circuit),53.67,EA,
+1830,Retentioning of LV conductor ( per span),221.8,EA,
+1840,Retentioning of MV conductor ( per span),274.35,EA,
+1850,Splicing & retention snapped conductor,336.07,EA,
+1853,POLE COVER PLASTIC UNIVERSAL,372.62,EA,Streetlight Accessories
+1860,Bandit strap all cables per pole,110.55,EA,
+1870,Dressing a double shackle pole including assembly,262.3,EA,
+1880,Install of any outreach bracket,128.33,EA,
+1890,Installation of LV stay assembly,225.74,EA,
+190,Supply and install new paving bricks,204.64,M2,
+1900,Installation of MV stay assembly,225.03,EA,
+1910,Installation of flying stay assembly,245.18,EA,
+1920,Install fly-stay-Pole including accessories,224.85,EA,
+1930,Install & fix inter-pole including all accessories,244.94,EA,
+1940,Install & fix Double Shackle pole including assembly,295.13,EA,
+1950,Install & fix Terminal-pole including accessories,238.74,EA,
+1960,Pole-mounted Distribution Box 1 & 3 phase boxes,539.41,EA,
+1970,Repair earth guards,207.75,EA,
+1980,Replace earth guards,254.45,EA,
+1990,Replace earth mats,252.84,EA,
+20,"Soil machine excavate dig, backfill, complete",143.35,M3,
+200,Backfill trench & compact only,89.47,M2,
+2000,Replace MV and LV insulators,197.57,EA,
+2010,Replace & install of X arm including insulation,197.4,EA,
+2020,Replace surge arrestors,276.4,EA,
+2030,Tree cutting under emergency,399.22,EA,
+2040,"Install, Commissioning street light SDB/SPB on pole",701.26,EA,
+2050,"Install pole-extension- 2,3m (Motor way)",786.82,EA,
+2060,Installation of lamps only (street lights),89.78,EA,
+2070,Cleaning of Luminaire bowls,65.87,EA,
+2080,Install fitting & lamp (Different sizes),193.47,EA,
+2090,Install stl lmr & 100mm-brack including Lamp,253.36,EA,
+210,Supply dry clean river sand,208.5,M3,
+2100,Remove and replace any size luminaire in,191.67,EA,
+2110,Install & wire Photo cell,180.25,EA,
+2120,Replace photo-electrical cell,133.19,EA,
+2130,Install Streetlight Control circuit in L,496.08,EA,
+2140,Remove and install a timer,140.89,EA,
+2150,Remove and install a ripple relay,142.39,EA,
+2160,Replace pole cover only,95.63,EA,
+2170,Straightening of skew poles,179.1,EA,
+2180,Install or replace street light bracket,143.83,EA,
+2190,Removal of welded covers,148.69,EA,
+2194,JNT 11 TRANS PI-XLPE 185-300 3C,5524.34,EA,Cable Joints
+220,Supply acceptable filling soil,159.26,M3,
+2200,Welding of pole covers,150.72,EA,
+2210,Wire any pole size,178.56,EA,
+2220,Numbering of all poles,91.87,EA,
+2230,Numbering of Transmission towers,144.46,ea,
+2240,Painting of Transmission towers,808.77,ea,
+2250,Painting of all poles ( Any Length),204.41,EA,
+2260,Sleeving and painting of poles,195.97,EA,
+2270,"Install pole earths ,including all excavation works",679.31,EA,
+2280,Install stainless steel wire rope,721.61,EA,
+2290,Install +C315 trailing cable for High Masts,561.31,EA,
+230,Reinstate lawn,70.25,M2,
+2300,Install 4-way term block & photo cell,151.12,EA,
+2310,Install a by-pass switch for photo cell,199.09,EA,
+2310,Stay Kit Complete:Low Voltage (LV),1227.26,EA,Network Accessories
+2312,"TX: 500kVA, 22kV/415V, DYN11, Pole",312407.43,EA,Distribution Transformers
+2320,Replace exist door with vandal proof,704.18,EA,
+2330,Disconnect and lower High Mast pole,2141.06,EA,
+2340,Replace-photo cell,224.23,EA,
+2350,Inspection and complete report of High Masts (checklist),745.87,EA,
+2360,Install earth leakage isolator high mast Distribution Board,438.85,EA,
+2370,Lowering and raising of sectional poles (Scissor mast),1498.97,EA,
+2380,Lowering and raising a luminaries (high mast),737.41,EA,
+2390,Painting damaged galvanizing high mast,208.36,EA,
+240,Supply and install new lawn,84.63,M2,
+2400,Lowering and raising a repaired high mast,2114.54,EA,
+2402,FRL 16-35 MECH SC,140.92,EA,Cable Ferrules
+2410,Replacing a faulty time switch,206.38,EA,
+2420,Supply and install holding down nuts per mast,163.92,EA,
+2430,"Replace 1,5mm² x 3 core silicone insulation",203.58,EA,
+2440,Replace 16 amp 240 volt switched socket,242.59,EA,
+2450,"Replace 2,5mm² x 5 core trailing cable",396.78,EA,
+2460,Replace 30 amp triple pole circuit,226.1,EA,
+2470,Replace 5 pin male plug top on trailing Cable,339.19,EA,
+2480,Replace 5 pin female socket outlet in mast,294.5,EA,
+2490,Supply & replace 5 pin male plug top on trailing Cable,382,EA,
+250,Supply and install new tar,518.38,M2,
+2500,Supply & replace 5 pin female socket outlet in mast,317.55,EA,
+2510,"Replace 60 amp fuse base, cart and fuse",167.91,EA,
+2520,Replace cable separator,373.75,EA,
+2530,Replace complete Distribution Board inside mast,861.21,EA,
+2540,Supply & replace complete Distribution Board inside mast,1426.47,EA,
+2550,Replace compression glands for above,121.65,EA,
+2560,Replace faulty contactor,191.73,EA,
+2570,Replace fiberglass hood/canopy (luminaire),309.78,EA,
+2580,Replace luminaires cable splitter box,258.97,EA,
+2590,Replace neutral bar on High mast Distribution Board,158.43,EA,
+260,Supply and cast ready mix concrete,596.97,M3,
+2600,Replace 400 watt lamp,175.26,EA,
+2610,Replace pole cover,176.49,EA,
+2620,Replace pulley for trailing cable (High mast),507.75,EA,
+2630,Replace pulley & housing 4 steel wire rope (High mast),524.6,EA,
+2640,Replace steel wire ropes complete with accessories,685.22,EA,
+2650,Reset any size circuit breaker,93.14,EA,
+2660,Replace and reset single pole circuit,205.68,EA,
+2670,Replace and reset triple pole circuit,218.33,EA,
+2680,Supply and tack welding a new nuts,165.32,EA,
+2690,Tack welding a used nuts,139.13,EA,
+270,Supply and cast concrete (self mix),927.14,M2,
+2700,Replace street light bracket complete - all sizes,145.84,EA,
+2710,Install street lighting luminaries-all sizes,178.29,EA,
+2720,Replace street lighting luminaires - all sizes,299.86,ea,
+2730,Supply and install complete Distribution Board,1685.46,EA,
+2740,Supply and mount stubby,1363.32,EA,
+2750,Touch up paint (per container),224.74,EA,
+2760,Collection of material from stores,933.23,EA,
+2770,Compaction certificate (public roads ),763.98,EA,
+2780,Provision of security per 12hr shift,1607.56,EA,
+2790,Decommissioning of meters,529.01,EA,
+280,Trench on concrete road,315.63,M3,
+2800,Decommissioning of supply,340.62,EA,
+2810,Commissioning of supply,424.94,EA,
+2820,Transport cable and large equipment,1411.49,EA,
+2830,Prep of As-built drawings electronically,1342.9,EA,
+2840,Preparation of hand over documents,1494.55,EA,
+2850,Inspect/remove and replace 5 amp 1 phase meter,208.34,EA,
+2860,Inspect/remove & replace poly phase meter,384.94,EA,
+2870,Second visit to check for tampering,328.89,EA,
+2880,Hand prescribed notice for irregularity,179.92,EA,
+2890,Issue Engineer's certificate of completion,1278.98,EA,
+290,Disposal of rock from excavations,221.71,M3,
+2900,Contractor to attend court/hearings (witness),1096.43,EA,
+2910,Install hasp & staple,308.64,EA,
+2920,Make off and connect 2.5mm2 x 19 core pilot,288,EA,
+2921,CAB LV ABC 25 4C AL,245.9,M,Aerial Bundled Conductor
+2930,Install including saddles 2.5mm² x19 core,102.75,EA,
+2940,Reprogram electronic meter,205.39,EA,
+2950,Replace old meter with new electronic meter,486.13,EA,
+2960,Provide download from electronic meter,184.52,EA,
+2970,Audit prepaid meters,139.05,EA,
+2980,Remove tamper/bridge meter,199.26,EA,
+2990,Install prepaid meter,517.97,EA,
+30,"Lose rocks/boulders soil, dig, backfill, complete",173.98,M3,
+300,"Rock, rubble and spoil removal & disposal",501.34,M3,
+3000,Revisit/no access/can't locate,197.67,EA,
+3010,Install precast plinths for Pillar box including prepare ground works,1052.33,EA,
+3020,Install Pillar Box (Complete),959.63,EA,
+3030,Pillar Box Repair,678.75,EA,
+3040,Painting of substations/Load Centre (brick sub),322.44,m2,
+3050,Painting of load centre (Minisub),580.36,EA,
+3060,Painting of pillar box,442.58,EA,
+3070,Labelling of Load Centre including pillar boxes,419.1,EA,
+3080,Security bars over louvers and windows,1222.59,m2,
+3090,Repair & Paint Substation Roof & Ceiling,388.35,m2,
+310,Rubble and spoil removal & disposal,546.17,M3,
+3100,Install of 2 m high palisade Fencing,1279.69,M,
+3110,Building work,360.44,m2,
+3120,Concrete work,491.19,m2,
+3130,Repair of Perimeter Fencing and walling,969.46,M,
+3140,Painting Perimeter Fencing and walling,172.44,M,
+3150,Repair Mss/Tss/Load centre door & hinges,440.21,EA,
+3160,Replace Mss/Tss/Load centre door & hinge,867.51,EA,
+3170,Repair substation doors & hinges,505.72,EA,
+3180,Replace substation doors & hinges,821.45,EA,
+3190,Replace hinges (all types),402.69,EA,
+320,Create temporary walkway over trench,1233.66,EA,
+3200,Install 8mm checker plate (Cover) trench in subtn,438.5,m2,
+3210,Supply and Install Anti Theft Mss brackets,693.73,EA,
+3220,Removal of illegal connection,524.62,EA,
+3230,Clean substation & chamber (inside),1267.37,m2,
+3232,CAB 11 XLPE 185 3C AL SWA,1309.27,M,Medium Voltage Cable
+3234,CAB 11 XLPE 300 3C AL SWA,1722.82,M,Medium Voltage Cable
+3240,Reinstate pole mounted pillar box doors,973.28,EA,
+3250,LPU site inspection and certificate installation,670.7,EA,
+3260,Install demand meter & commission,783.34,EA,
+3270,Install CT's and VT's,678.94,EA,
+3280,Install and commission a modem,494.81,EA,
+3290,install an external antennae,580.71,EA,
+330,Sign boards JRA cop for projects only,936.54,EA,
+3300,Standby - Special Events(per occasion),2422.41,EA,
+3310,Supply of 4 core x 2.5mm CU PVC SWA PVC 600,46.69,M,
+3320,Supply of 4 core x 4mm CU PVC SWA PVC 600,71.62,M,
+3330,Supply of 12 core x 2.5mm CU PVC SWA PVC 600,63.92,M,
+3340,Supply of 12 core x 4mm CU PVC SWA PVC 600,110.52,M,
+3350,Laying of 4 core x 2.5mm CU PVC SWA PVC 600,30.69,M,
+3360,Laying of 4 core x 4mm CU PVC SWA PVC 600,24.99,M,
+3370,Laying of 12 core x 2.5mm CU PVC SWA PVC 600,29.48,M,
+3380,Laying of 12 core x 4mm CU PVC SWA PVC 600,38.48,M,
+3390,Install Pre paid meter Single Phase,448.51,EA,
+340,Obtain way leave information,899.96,EA,
+3400,Install Pre paid meter Three Phase,659.15,EA,
+3410,AMR Meter Installation,706.45,EA,
+3420,Install AMR Meter Modem,311.62,EA,
+3430,Install Protection Structure,539.52,EA,
+3440,Install Locks,52.34,EA,
+3450,Install a 40mm sleeve,43.62,M,
+3460,Install a 24SM HDD in fibre core sleeve,28.94,M,
+3470,Installation of 48SM HDD fibre core in a sleeve,42.89,M,
+3480,Fusion splicing per fibre core,154.14,EA,
+3490,Term. of 24 fibre in p/panel including splicing,2843.84,EA,
+350,Install Danger barriers for trenches,870.03,EA,
+3500,Term. of 48 fibre in p/panel including splicing,5279.88,EA,
+3510,Optical testing with light source and po,235.91,EA,
+3520,OTDR testing including traces in hard an,1168.18,EA,
+3530,Installation of demand meters,810.39,EA,
+3531,LED streetlight (250W HPS/T equivalent),4571.51,EA,Streetlight Luminaires
+3532,LED streetlight (100W HPS/T equivalent),3019.07,EA,Streetlight Luminaires
+3533,LED streetlight (70W HPS/T equivalent),2965.94,EA,Streetlight Luminaires
+3534,LED streetlight (400W HPS/T equivalent),5669.81,EA,Streetlight Luminaires
+3540,Installation of modems,385,EA,
+3550,Installation of sim cards,362.22,EA,
+3560,Second visit to customer to install prepaid meter,446.31,EA,
+3570,Stringing of AIRDAC 10mm & 16mm,45.14,M,
+3580,String ABC (new) of 16 to 25mm 2/3 core (per span),80.55,EA,
+3582,MSS TB 500KVA SR DYN11 3MM THICK AV SF6,680724.06,EA,Miniature Substations
+3583,MSS TB 315KVA DR DYN11 6MM THICK AV SF6,662262.41,EA,Miniature Substations
+3584,MSS TB 500KVA SR DYN11 6MM THICK AV SF6,736317.44,EA,Miniature Substations
+3585,MSS TB 500KVA DR DYN11 6MM THICK AV SF6,715531.01,EA,Miniature Substations
+3586,MSS TB 630KVA DR DYN11 6MM THICK AV SF6,794049.83,EA,Miniature Substations
+3587,MSS TB 1000KVA DR DYN11 6MM THICK AV SF6,815533.98,EA,Miniature Substations
+3590,String ABC (new) of 35mm2 (4/5 core) (per span),102.5,EA,
+360,"Shoring of trench walls (for 1,5m plus only)",482.09,M3,
+3600,String ABC (new) of 50mm² (4/5 core) (per span),166.71,EA,
+3610,String ABC (new) of 95mm² (4/5 core) (per span),174.29,EA,
+3620,String abc (new) of 120mm² (4/5 core+SL) (per span),190.19,EA,
+3630,Retentioning of ABC of 35mm²(4 core) (per span),23.14,EA,
+3640,Retentioning of ABC of 50mm² (4 core) (per span),26.78,EA,
+3650,Retentioning of ABC of 35mm²(4 core plu (per span),32.69,EA,
+3654,HTLS 1227A 21.79MM DIAMETER,3233.91,M,High Temperature Low Sag Conductor
+3660,Retentioning of ABC of 50mm²(4 core plu (per span),41.47,EA,
+3670,Retentioning of ABC of 95mm²(4 core plu (per span),66.6,EA,
+3680,Retentioning of ABC of 120mm²(4 core pl (per span),78.17,EA,
+3690,Removal of ABC 35mm² (per span),25,EA,
+370,Pumping out flooded trench,504.82,EA,
+3700,Removal of ABC 50mm² (per span),28.33,EA,
+3701,MSS 315KVA DR DYN11 3MM AV DRY TYPE TRFR,555382.92,EA,Miniature Substations
+3702,MSS TB 315KVA SR DYN11 3MM THICK AV SF6,699542.18,EA,Miniature Substations
+3703,MSS TB 500KVA DR DYN11 3MM THICK AV SF6D,715731.56,EA,Miniature Substations
+3706,MSS 315KVA DR DYN11 6MM AV DRY TYPE TRFR,600783.38,EA,Miniature Substations
+3708,MSS 500KVA SR DYN11 3MM SF6DRY TYPE TRFR,596786.59,EA,Miniature Substations
+3709,MSS 630KVA DR DYN11 3MM SF6DRY TYPE TRFR,679049.3,EA,Miniature Substations
+3710,MSS 1000KVA DR DYN11 3MMSF6DRY TYPE TRFR,640804.21,EA,Miniature Substations
+3710,Removal of ABC 95mm² (per span),38.95,EA,
+3711,MSS 500KVA SR DYN11 6MM SF6DRY TYPE TRFR,614818.37,EA,Miniature Substations
+3713,MSS 630KVA DR DYN11 6MM SF6DRY TYPE TRFR,695372.73,EA,Miniature Substations
+3720,Removal of ABC 120mm² (per span),46.47,EA,
+3730,Retentioning of Fox per conductor,16.38,EA,
+3740,Retentioning of Mink per conductor,17.93,EA,
+3750,Retentioning of Hare per conductor,18.97,EA,
+3760,Retentioning of Squirrels per conductor,20.79,EA,
+3770,Retentioning of Ferret per conductor,30.08,EA,
+3780,Stringing of Fox per conductor,36.18,EA,
+3790,Stringing of Mink per conductor,50.61,EA,
+380,Location of services with the use of appropriate locator,1053.45,EA,
+3800,Stringing of Hare per conductor,55.92,EA,
+3810,Removal of Fox per line (Not ABC),69.08,EA,
+3820,Removal of Mink per line (Not ABC),27.01,EA,
+3830,Removal of Hare per line (Not ABC),45.32,EA,
+3840,transportation of high mast,9141.3,EA,
+3850,Install a single phase Split Prepaid Meter,698.16,EA,
+3860,Install a 3 phase Split Prepaid Meter,809.05,EA,
+3870,programming Customer CIU to meter,430.28,EA,
+3880,Replace CMK with Anti-Vandal CMK – C,1605.44,EA,
+3890,Replace SDB with Anti-Vandal CDU (pole mntd)(D),1484.7,EA,
+390,LV cable fault location,1078.93,EA,
+3900,"Install, test and comm. RAT#s in MSS (E)",613.61,EA,
+391,TAPE PVC TYPE B YELLOW,39.16,EA,Insulating Tape
+3910,Replace CMK with Protection Enclo & In (F),2088.31,EA,
+392,TAPE PVC TYPE B BLUE,40.04,EA,Insulating Tape
+3920,"Replace SDB with anti-Vandal, pole mntd including dec",1504.77,EA,
+3922,CAB LV XLPE FLEXIBLE 120 1C AL YELLOW,365.02,M,House Wire
+3928,CAB LV XLPE 25 2C AL SWA,182.41,M,Low Voltage Cable
+3929,CAB LV XLPE 25 4C AL SWA,213.1,M,Low Voltage Cable
+393,LUG 35-95 MECH M12,177.85,EA,Cable Lugs
+3930,CAB LV XLPE 35 4C AL SWA,278.24,M,Low Voltage Cable
+3930,Connecting of kW/h meters,276.25,EA,
+3931,CAB LV XLPE 50 4C AL SWA,371.6,M,Low Voltage Cable
+3932,CAB LV XLPE 95 4C AL SWA,564.01,M,Low Voltage Cable
+3933,CAB LV XLPE 150 4C AL SWA,814.55,M,Low Voltage Cable
+3934,CAB LV XLPE 240 4C AL SWA,1269.93,M,Low Voltage Cable
+3940,Joint 10 mm2 split concentric LV cab,104.45,EA,
+3950,Install double strain fitting,97.48,EA,
+3960,Install suspension fitting,60.6,EA,
+3970,Install IPCS,36.83,EA,
+3980,Bandit strapping (per pole),48.47,EA,
+3990,Label service cables,34.51,EA,
+40,"Lose rocks/boulders, soil mac, backfill, complete",212.85,M3,
+400,MV Cable fault location,1278.71,EA,
+4000,Decommission existing LV line,383.95,EA,
+4010,Removal of redundant cables off pole,104.95,M,
+4020,Installation of stay pedestal,280.41,EA,
+4030,Installation of plain Mast DIS 1,470.52,EA,
+4040,Under road drilling,1109.59,M,
+4044,L&G 1PHASE PREPAID 230V SPLIT UNIT,3950.8,EA,Electricity Meters
+4050,Hydraulic crane truck 160-300 ton with boom reaching 50 metres.,116379.9,HR,
+410,Traffic deviation (where applicable),84.66,EA,
+420,Laying of 300mm x3 MV 3 core cable,88.43,M,
+424,MSS TB 315KVA DR DYN11 3MM THICK AV SF6,615037.43,EA,Miniature Substations
+425,MSS TB 500KVA DR DYN11 3MM THICK AV SF6,686021.62,EA,Miniature Substations
+426,MSS TB 630KVA DR DYN11 3MM THICK AV SF6,710370.03,EA,Miniature Substations
+427,MSS TB 1000KVA DR DYN11 3MM THICK AV SF6,780430.33,EA,Miniature Substations
+4284,HEXING CUSTOMER INTERFACE UNIT(CIU),889.51,EA,Electricity Meters
+4285,HEXING 3PHASE 4WIRE POSTPAID 400V,4239.82,EA,Electricity Meters
+430,"Lamp:250W,230V,TUB,E40,MH",365.48,EA,Metal Halide Lamps
+430,Laying of 185mm x3 MV 3 core cable,70.64,M,
+440,Laying of 95mm x3 MV 3 core cable,51.73,M,
+450,Laying of 20 pair control cable,45.77,M,
+453,CAB LV ABC 25 2C AL,180.09,M,Aerial Bundled Conductor
+454,CAB LV ABC 50 5C AL,288.09,M,Aerial Bundled Conductor
+455,CAB LV ABC 95 5C AL,392.39,M,Aerial Bundled Conductor
+456,CAB LV ABC 120 5C AL,463.16,M,Aerial Bundled Conductor
+460,Laying of LV 4 core cable 300mm2,68.66,M,
+470,Laying of LV 4 core cable 70 to185mm2,45.91,M,
+480,Laying of LV 4 core cable 25 to 35mm2,91.21,M,
+480,"Pole:13.8m,12m,With Access Cover,Steel",10264.92,EA,Poles & Masts
+481,"Pole:11.5m,10m,With Access Cover,SteelA6",7616.9,EA,Poles & Masts
+482,"Pole:9.2m,8m,With Access Cover,Steel A7",6253.92,EA,Poles & Masts
+490,"Bracket:Lighting,Mounting Luminaires",997.07,EA,Streetlight Accessories
+490,Install cable in tunnels 300mm2 3 core,131.74,M,
+50,Rock wedge & power drill,338.6,M3,
+500,Install cable in tunnels 185mm2 3 core,100.72,M,
+5044,CAB LV 16 SCC CU,233.57,M,Aerial Bundled Conductor
+5063,CAB LV 10 SCC CU,145.5,M,Aerial Bundled Conductor
+5082,CAB LV XLPE 240 4C AL SWA,1517.79,M,Low Voltage Cable
+510,Install cable in tunnels 630mm2 1 core,155.63,M,
+513,PADLOCK LV (C) YELLOW,678.33,EA,General Goods
+517,IPC 25-95/25-95 ABC MAIN,102.75,EA,Overhead Network Accessories
+518,IPC 25-95/10-16 ABC SERVICE,89.26,EA,Overhead Network Accessories
+519,IPC 25-95/1.5-6 ABC SL,88.57,EA,Overhead Network Accessories
+520,Install cable in tunnels hard drawn bare copper,91.22,M,
+520,IPC 120/120 ABC MAIN,122.93,EA,Overhead Network Accessories
+5201,MSS PLINTH TYPE B,11641.91,EA,Plinths
+521,IPC 120/10-16 ABC SERVICE,117.56,EA,Overhead Network Accessories
+5218,CONTACTOR SL 80A 3 PHASE AC3,1835.11,EA,Streetlight Accessories
+5219,CONTACTOR SL 40A 3 PHASE AC3,1080.51,EA,Streetlight Accessories
+5253,LUMINAIRE: STREET LIGHT 100 W HPS CO SE,1745.08,EA,Streetlight Luminaires
+5291,JNT LV 70-120 4C,2151.67,EA,Cable Joints
+5294,JNT LV 185-240 4C,3578.78,EA,Cable Joints
+530,Laying of LV cable 16mm2,49.34,M,
+5306,"TX: 500kVA, 11/6.6kV/415V, DYN11",267556.18,EA,Distribution Transformers
+5308,"TX: 315kVA,11/ 6.6kV/415V, DYN11",248138.38,EA,Distribution Transformers
+5313,MCCB 160 - 400A TP LV 35KA,11713.61,EA,Miniature Circuit Breakers
+5315,MCB 100A 6KA SP,744.21,EA,Moulded Case Circuit Breakers
+5341,JNT LV 120-185 4C,3420.7,EA,Cable Joints
+5348,FRL 35-95 MECH SC,205.93,EA,Cable Ferrules
+5351,FRL 95-240 MECH SC,311.25,EA,Cable Ferrules
+5353,LUG 95-240 MECH M12,260.39,EA,Cable Lugs
+5396,Spigot Adaptor:Reference A(1),452.54,EA,Streetlight Accessories
+540,Laying plastic marker tape,13.37,M,
+541,STRAIN FITTING LV ABC,148.85,EA,Overhead Network Accessories
+544,"Suspension Fitting:PS 54-50-35,Black",170.87,EA,Overhead Network Accessories
+5451,MCB 80A 6KA SP,727.87,EA,Moulded Case Circuit Breakers
+5453,"MCB:230V,20A,2.5kA,Single Pole",409.94,EA,Moulded Case Circuit Breakers
+5455,MCB 20A 6KA SP,273.06,EA,Moulded Case Circuit Breakers
+5472,"Clamp U:Steel,12mm",165.3,EA,Overhead Network Accessories
+5494,MCB 40A 6KA SP,295.96,EA,Moulded Case Circuit Breakers
+550,Installation of sleeves 110 mm,32.11,M,
+551,"Insulating Oil:Regen,Non-Exchange,210l",6124.02,EA,Transformer Insulating Oil
+5510,"Connector Screw:Term, No. 2",51.46,EA,Electrical Accessories
+5511,"End Connector,Insulating Sleeve:No 2,PVC",49.58,EA,Electrical Accessories
+5512,TAPE SELF-FUSING 9M X 25MM,199.35,EA,Insulating Tape
+5541,FUSE LV 315A 80KA SLOT TYPE J DIST 83MM,325.07,EA,Low Voltage Fuses
+5543,FUSE LV 400A 80KA SLOT TYPE J DIST 83MM,373.76,EA,Low Voltage Fuses
+560,Installation of sleeves 160mm,39.65,M,
+5613,"CableTies:T120R,388X7.8mm,L,1EA=1Pkt 50",311.85,EA,Cable Ties
+5614,JNT LV 4-10 4C,594.41,EA,Cable Joints
+5615,JNT LV 16-25 4C,1124.95,EA,Cable Joints
+5616,JNT LV 35-70 4C,1662.14,EA,Cable Joints
+5665,TRM 11 95-185 SEPARABLE CONNECTOR INDOOR,6107.68,EA,Cable Terminations
+5685,FUSE LV 6A 80KA OFFSET TAG 58 MM,163.26,EA,Low Voltage Fuses
+570,Supply and install 110mm steel pipe,104.84,M,
+5709,"Fuse Carrier,Type J LV Fuse 83mm FC",341.37,EA,Low Voltage Fuses
+571,METERING UNIT 11KV 3MM THICK RMU SF6,434078.55,EA,Metering Units
+5726,FUSE BASE AND CARRIER FOR DIST LV FUSE,286.58,EA,Low Voltage Fuses
+5786,LUMINAIRE:STREET LIGHT 70 W HPS CO SE,2353.63,EA,Streetlight Luminaires
+5790,"Floodlight:400W,Narrow Beam,HPS",3401.28,EA,Floodlight Luminaires
+5798,LUMINAIRE:STREET LIGHT 400 W HPS CO SE,4437.18,EA,Streetlight Luminaires
+580,Drawn cable = >95 mm2 through pipe,509.65,M,
+583,JNT 11 TRANS PI-XLPE 95-185 3C,5079.02,EA,Cable Joints
+589,JNT 11 XLPE 95-185 3C,4580.26,EA,Cable Joints
+590,Drawn cable < 95 mm2 through pipe,81.98,M,
+5953,TAPE PVC TYPE B RED,40.33,EA,Insulating Tape
+60,Pole hole removal of rock,294.96,M3,
+600,Drawn LV pilot cable<35 mm2 through pipe,27.49,M,
+6017,TAPE PVC TYPE B GREEN,38.39,EA,Insulating Tape
+6059,TAPE PVC TYPE B BLACK,48.44,EA,Insulating Tape
+6077,LUG 95 CU CIR M12,185.6,EA,Cable Lugs
+6081,LUMINAIRE STREET LIGHT 250 W HPS CO SE,3323.54,EA,Streetlight Luminaires
+610,MV Joint for 300mm2 x 3 core cable,1074.96,EA,
+620,MV Joint for 185mm2 x 3 core cable,960.83,EA,
+6205,FUSE LV 16A 80KA OFFSET TAG 58 MM LENGTH,147.49,EA,Low Voltage Fuses
+6206,FUSE LV 10A 80KA OFFSET TAG 58 MM LENGTH,139.32,EA,Low Voltage Fuses
+6233,Connector Screw No. 3,53.14,EA,Electrical Accessories
+6234,"End Connector,Insulating Sleeve:No 3,PVC",54.31,EA,Electrical Accessories
+6279,PECU NEMA TYPE 1800VA FAIL ON,444.06,EA,Luminaire Accessories
+6280,PECU NEMA BASE,239.53,EA,Luminaire Accessories
+6282,"Clamp U:Steel,16mm",116.66,EA,Network Accessories
+6295,PECU MICRO TYPE 1800VA FAIL ON,453.09,EA,Luminaire Accessories
+630,MV Joint for 95mm2 x 3 core cable,850.64,EA,
+635,FUSE LV 10A 80KA STRL CRTR 38 MM,121.24,EA,Low Voltage Fuses
+637,FUSECARRIER FOR CART FUSE STREETLIGHT LV,193.29,EA,Low Voltage Fuses
+640,LV Joint for 300mm2 x 4 core cable,918.94,EA,
+6455,FUSE LV 160A 80KA TYPE NH-00 DIST,206.77,EA,Low Voltage Fuses
+650,LV Joint for 70 to 185mm2 x4 core cable,747.97,EA,
+6531,SUSPENSION ASSEMBLY ABC,167.67,EA,Network Accessories
+660,LV Joint for 25mm2 & 35mm2 x4 core cable,437.39,EA,
+670,LV Joint for 16mm2 >=2 core or more cable,345.66,EA,
+680,MV make-off & termination >= 300mm2 x 3 core,893.75,EA,
+690,MV make-off & termination >= 185mm2 x 3 core,788.62,EA,
+70,Rock requiring blasting,297.91,M3,
+700,MV make-off & termination >= 95mm2 x 3 core,622.88,EA,
+710,LV make-off & termination 300mm2 4 Core,631.89,ea,
+7190,"Lamp:400W,230V,TUB,E40,HPS",197.56,EA,High Pressure Sodium Lamps
+720,LV make-off & termination 70mm2 to 185mm2 x 4 core,476.15,EA,
+7206,"Lamp:400W,230V,TUB,E40,MH",273.38,EA,Metal Halide Lamps
+7235,"Lamp:70W,230V,Elliptical,E27,HPS",159.51,EA,High Pressure Sodium Lamps
+7237,"Lamp:250W,230V,TUB,E40,HPS",194.18,EA,High Pressure Sodium Lamps
+7258,"Lamp:100W,230V,Elliptical,E40,HPS",173.18,EA,High Pressure Sodium Lamps
+7289,"ACSR MINK, 260A, 10.52MM DIAMETER",342.39,M,Aluminium Conductor Steel Reinforced
+730,LV make-off & termination >= 25mm2 & 35mm2 x 4 core,341.25,EA,
+740,LV make-off & termination 16 mm2 >= 2 core,215.37,EA,
+750,Seal LV/MV cable ends,106.5,EA,
+760,Earth MVC & MSS install earths including excavation,1262.64,EA,
+762,FUSE CARRIER NH-2 ABC POLE MOUNTED,3145.1,EA,Low Voltage Fuses
+763,STRAIN ASSEMBLY ABC,310.68,EA,Network Accessories
+770,Install earth spike & connect including CAD welding,303.47,EA,
+780,Supply & install earth spike,212.15,EA,
+790,Repair earth mats,384.68,EA,
+80,"Tar paving cut,& remove",252.79,M2,
+800,Positioning of MSS (excluding cable & MV switchgear),1576.32,EA,
+802,"TX: 315kVA, 11/6.6kV/415V, DYN11, Pole",281374.2,EA,Distribution Transformers
+810,Install pole mounted distributor transformer,1459.32,EA,
+820,Complete install of TSS,3404.47,EA,
+830,Position MV transformers,834.23,EA,
+840,Position MV switchgear RMU,778.14,EA,
+850,Position MV meter cubicle,607.93,EA,
+860,Installation of MV VCB + meter cubicle (BMK),828.03,EA,
+870,Install MV VCB cubicle units,642.59,EA,
+880,"Cement top ducts Supply, installl WxL",295.82,M2,
+890,Sign write complete MV sub,275.28,EA,
+90,Concrete 100mm thick cut & remove,170.57,M2,
+900,Install designation labels' (RMU & mini-subs),209.59,EA,
+910,"Disconnect, reconnect & test LV Termination (excluding LV tape)",192.25,EA,
+913,TRM 11 185-300 3C TYPE 4 SSC INDOOR,7883.54,EA,Cable Terminations
+915,JNT 11 XLPE 185-300 3C,6467.7,EA,Cable Joints
+920,"Disconnect, reconnect & test excluding MV taped termination",231.7,EA,
+930,Install chamber light wiring,367.23,EA,
+940,Installation maximum demand meter,226.29,EA,
+950,Installation & connecting of kW/h meter,353.84,EA,
+960,Installation of test block and fuses,222.23,EA,
+970,Connect test block and fuses,209.32,EA,
+980,"Install, connect 3 phase kW/h meter & 80A mcb & <25mm2 cable",515.4,EA,
+990,"Install, connect 3 phase kW/h meter & 80A mcb & <40m cable",695.55,EA,
