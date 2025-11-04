@@ -281,9 +281,29 @@ class DashboardActivity : AppCompatActivity() {
             } else invoices
 
             val totalInvoices = filtered.size
-            val totalAmount = filtered
-                .filter { it.total != null }
-                .sumOf { it.total!!.toDoubleOrNull() ?: 0.0 }
+            
+            // Calculate total amount for ALL invoices (draft or any state)
+            // Use total field if available, otherwise calculate from line items including VAT
+            val totalAmount = filtered.sumOf { invoice ->
+                if (invoice.total != null) {
+                    // Use existing total if available (includes VAT)
+                    invoice.total!!.toDoubleOrNull() ?: 0.0
+                } else {
+                    // Calculate from line items for draft/pending invoices
+                    val subtotal = invoice.lines?.sumOf { line ->
+                        val qty = line.quantity.toDoubleOrNull() ?: 0.0
+                        val price = line.unitPrice.toDoubleOrNull() ?: 0.0
+                        qty * price
+                    } ?: 0.0
+                    
+                    // Add VAT (default 15% if not specified)
+                    val vatPercent = invoice.vatPercent?.toDoubleOrNull() ?: 15.0
+                    val vatAmount = subtotal * (vatPercent / 100.0)
+                    
+                    // Return total including VAT
+                    subtotal + vatAmount
+                }
+            }
 
             // Show notifications for changes (only during polling)
             if (isPolling && previousInvoiceCount > 0) {

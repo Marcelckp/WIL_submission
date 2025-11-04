@@ -25,6 +25,7 @@ class InvoiceListActivity : AppCompatActivity() {
     private var pollingRunnable: Runnable? = null
     private val POLLING_INTERVAL = 5_000L // 5 seconds
     private val previousInvoicesMap = mutableMapOf<String, InvoiceResponse>()
+    private var currentUserId: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,10 +34,33 @@ class InvoiceListActivity : AppCompatActivity() {
 
         apiService = com.smartinvoice.app.data.remote.ApiClient.create(this)
         prefs = SharedPreferencesHelper.getInstance(this)
+        
+        // Initialize current user ID to detect user changes
+        currentUserId = prefs.getUserId()
 
         setupViews()
         loadInvoices()
         startPolling()
+    }
+    
+    override fun onResume() {
+        super.onResume()
+        // Check if user has changed (important when switching accounts)
+        val userId = prefs.getUserId()
+        if (userId != currentUserId) {
+            // User changed - reset everything and reload
+            currentUserId = userId
+            previousInvoicesMap.clear()
+            // Recreate API service to ensure we're using the latest token
+            apiService = com.smartinvoice.app.data.remote.ApiClient.create(this)
+            // Stop any existing polling
+            pollingRunnable?.let {
+                pollingHandler.removeCallbacks(it)
+            }
+            // Reload data and restart polling
+            loadInvoices()
+            startPolling()
+        }
     }
 
     private fun setupViews() {
@@ -64,12 +88,29 @@ class InvoiceListActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
+                // Ensure we're using the latest token by recreating the API service
+                apiService = com.smartinvoice.app.data.remote.ApiClient.create(this@InvoiceListActivity)
+                
                 val response = apiService.getInvoices()
+                
+                // Double-check that we're only showing invoices for the current user
+                val currentUserId = prefs.getUserId()
+                val filteredInvoices = if (currentUserId != null) {
+                    // Filter invoices client-side as an extra safety measure
+                    // This ensures we only show invoices created by the current user
+                    // Backend should already filter, but this adds an extra layer of protection
+                    response.invoices.filter { 
+                        it.createdBy != null && it.createdBy == currentUserId 
+                    }
+                } else {
+                    // If no user ID, show empty list to prevent showing wrong user's data
+                    emptyList()
+                }
                 
                 // Detect changes for notifications (only during polling)
                 if (!showLoading && previousInvoicesMap.isNotEmpty()) {
-                    val newInvoices = response.invoices.filter { !previousInvoicesMap.containsKey(it.id) }
-                    val statusChanged = response.invoices.filter { invoice ->
+                    val newInvoices = filteredInvoices.filter { !previousInvoicesMap.containsKey(it.id) }
+                    val statusChanged = filteredInvoices.filter { invoice ->
                         val prev = previousInvoicesMap[invoice.id]
                         prev != null && prev.status != invoice.status
                     }
@@ -105,14 +146,14 @@ class InvoiceListActivity : AppCompatActivity() {
                 
                 // Update previous invoices map
                 previousInvoicesMap.clear()
-                response.invoices.forEach { invoice ->
+                filteredInvoices.forEach { invoice ->
                     previousInvoicesMap[invoice.id] = invoice
                 }
                 
-                adapter.submitList(response.invoices)
+                adapter.submitList(filteredInvoices)
                 
                 // Update count
-                val count = response.invoices.size
+                val count = filteredInvoices.size
                 binding.savedCountText.text = "$count ${getString(com.smartinvoice.app.R.string.saved)}"
                 
             } catch (e: Exception) {
