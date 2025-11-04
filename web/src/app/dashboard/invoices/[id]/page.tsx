@@ -381,7 +381,10 @@ export default function InvoiceDetailPage() {
               >
                 {invoice.status}
               </span>
-              {invoice.rejectionReason && invoice.status === "DRAFT" && (
+              {/* Only show rejection reason for DRAFT invoices */}
+              {invoice.status === "DRAFT" && 
+               invoice.rejectionReason && 
+               invoice.rejectionReason.trim() !== "" && (
                 <p className="mt-2 text-sm text-red-600 max-w-xs">
                   {invoice.rejectionReason}
                 </p>

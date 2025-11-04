@@ -17,6 +17,8 @@ import com.smartinvoice.app.data.remote.models.InvoiceResponse
 import com.smartinvoice.app.databinding.ActivityInvoiceDetailBinding
 import com.smartinvoice.app.util.SharedPreferencesHelper
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.text.NumberFormat
@@ -344,17 +346,29 @@ class InvoiceDetailActivity : AppCompatActivity() {
                 binding.progressBar.visibility = View.VISIBLE
                 
                 // First try to use serverPdfUrl if available, otherwise download from API
-                val pdfBytes = if (invoice?.serverPdfUrl != null) {
+                val pdfBytes = if (invoice?.serverPdfUrl != null && invoice.serverPdfUrl!!.isNotBlank()) {
                     try {
                         // Download from Firebase Storage URL
-                        downloadFromUrl(invoice.serverPdfUrl!!)
+                        withContext(Dispatchers.IO) {
+                            downloadFromUrl(invoice.serverPdfUrl!!)
+                        }
                     } catch (e: Exception) {
+                        e.printStackTrace()
                         // Fallback to API endpoint
-                        downloadFromApi(id)
+                        try {
+                            withContext(Dispatchers.IO) {
+                                downloadFromApi(id)
+                            }
+                        } catch (apiError: Exception) {
+                            apiError.printStackTrace()
+                            throw Exception("Failed to download from URL: ${e.message ?: "Unknown error"}. Failed to download from API: ${apiError.message ?: "Unknown error"}")
+                        }
                     }
                 } else {
                     // Download from API endpoint
-                    downloadFromApi(id)
+                    withContext(Dispatchers.IO) {
+                        downloadFromApi(id)
+                    }
                 }
                 
                 if (pdfBytes == null || pdfBytes.isEmpty()) {
@@ -363,16 +377,23 @@ class InvoiceDetailActivity : AppCompatActivity() {
                 }
                 
                 // Save to temporary file
-                val tempFile = java.io.File(getExternalFilesDir(null), "invoice_${invoice?.invoiceNumber ?: id}.pdf")
-                tempFile.parentFile?.mkdirs()
-                tempFile.writeBytes(pdfBytes)
+                val tempFile = withContext(Dispatchers.IO) {
+                    val file = java.io.File(getExternalFilesDir(null), "invoice_${invoice?.invoiceNumber ?: id}.pdf")
+                    file.parentFile?.mkdirs()
+                    file.writeBytes(pdfBytes)
+                    file
+                }
                 
                 // Share PDF
                 sharePdf(tempFile)
                 
             } catch (e: Exception) {
                 e.printStackTrace()
-                val errorMsg = e.message ?: "Unknown error occurred"
+                val errorMsg = when {
+                    e.message != null && e.message!!.isNotBlank() -> e.message!!
+                    e.cause?.message != null -> e.cause!!.message!!
+                    else -> "Unknown error occurred. Please check your internet connection and try again."
+                }
                 Toast.makeText(this@InvoiceDetailActivity, "Failed to download PDF: $errorMsg", Toast.LENGTH_LONG).show()
             } finally {
                 binding.progressBar.visibility = View.GONE
@@ -381,40 +402,70 @@ class InvoiceDetailActivity : AppCompatActivity() {
     }
     
     private suspend fun downloadFromUrl(url: String): ByteArray {
-        val client = okhttp3.OkHttpClient()
-        val request = okhttp3.Request.Builder()
-            .url(url)
-            .build()
-        
-        val response = client.newCall(request).execute()
-        if (!response.isSuccessful) {
-            throw Exception("HTTP ${response.code}: ${response.message}")
+        return withContext(Dispatchers.IO) {
+            val client = OkHttpClient.Builder()
+                .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+                .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+                .writeTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+                .build()
+            
+            val request = Request.Builder()
+                .url(url)
+                .build()
+            
+            val response = client.newCall(request).execute()
+            if (!response.isSuccessful) {
+                val errorBody = response.body?.string() ?: ""
+                throw Exception("HTTP ${response.code}: ${response.message}. $errorBody")
+            }
+            
+            val body = response.body ?: throw Exception("Response body is null")
+            try {
+                body.bytes()
+            } catch (e: Exception) {
+                throw Exception("Failed to read response body: ${e.message}")
+            }
         }
-        
-        val body = response.body ?: throw Exception("Response body is null")
-        return body.bytes()
     }
     
     private suspend fun downloadFromApi(invoiceId: String): ByteArray {
-        val token = prefs.getToken()
-        if (token == null) {
-            throw Exception("Authentication token not found")
+        return withContext(Dispatchers.IO) {
+            val token = prefs.getToken()
+            if (token == null) {
+                throw Exception("Authentication token not found")
+            }
+            
+            val baseUrl = com.smartinvoice.app.BuildConfig.API_BASE_URL
+            val url = if (baseUrl.endsWith("/")) {
+                "${baseUrl}invoices/$invoiceId/pdf"
+            } else {
+                "$baseUrl/invoices/$invoiceId/pdf"
+            }
+            
+            val client = OkHttpClient.Builder()
+                .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+                .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+                .writeTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+                .build()
+            
+            val request = Request.Builder()
+                .url(url)
+                .addHeader("Authorization", "Bearer $token")
+                .build()
+            
+            val response = client.newCall(request).execute()
+            if (!response.isSuccessful) {
+                val errorBody = response.body?.string() ?: "Unknown error"
+                throw Exception("HTTP ${response.code}: $errorBody")
+            }
+            
+            val body = response.body ?: throw Exception("Response body is null")
+            try {
+                body.bytes()
+            } catch (e: Exception) {
+                throw Exception("Failed to read response body: ${e.message}")
+            }
         }
-        
-        val client = okhttp3.OkHttpClient()
-        val request = okhttp3.Request.Builder()
-            .url("${com.smartinvoice.app.BuildConfig.API_BASE_URL}invoices/$invoiceId/pdf")
-            .addHeader("Authorization", "Bearer $token")
-            .build()
-        
-        val response = client.newCall(request).execute()
-        if (!response.isSuccessful) {
-            val errorBody = response.body?.string() ?: "Unknown error"
-            throw Exception("HTTP ${response.code}: $errorBody")
-        }
-        
-        val body = response.body ?: throw Exception("Response body is null")
-        return body.bytes()
     }
     
     private fun sharePdf(file: java.io.File) {
