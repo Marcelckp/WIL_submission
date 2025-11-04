@@ -170,7 +170,7 @@ SAP #,SHORT DESCRIPTION,RATE,UNIT,CATEGORY
 230,Reinstate lawn,70.25,M2,
 2300,Install 4-way term block & photo cell,151.12,EA,
 2310,Install a by-pass switch for photo cell,199.09,EA,
-2311,Stay Kit Complete:Low Voltage (LV),1227.26,EA,Network Accessories
+2310,Stay Kit Complete:Low Voltage (LV),1227.26,EA,Network Accessories
 2312,"TX: 500kVA, 22kV/415V, DYN11, Pole",312407.43,EA,Distribution Transformers
 2320,Replace exist door with vandal proof,704.18,EA,
 2330,Disconnect and lower High Mast pole,2141.06,EA,
@@ -348,7 +348,7 @@ SAP #,SHORT DESCRIPTION,RATE,UNIT,CATEGORY
 3708,MSS 500KVA SR DYN11 3MM SF6DRY TYPE TRFR,596786.59,EA,Miniature Substations
 3709,MSS 630KVA DR DYN11 3MM SF6DRY TYPE TRFR,679049.3,EA,Miniature Substations
 3710,MSS 1000KVA DR DYN11 3MMSF6DRY TYPE TRFR,640804.21,EA,Miniature Substations
-3712,Removal of ABC 95mm² (per span),38.95,EA,
+3710,Removal of ABC 95mm² (per span),38.95,EA,
 3711,MSS 500KVA SR DYN11 6MM SF6DRY TYPE TRFR,614818.37,EA,Miniature Substations
 3713,MSS 630KVA DR DYN11 6MM SF6DRY TYPE TRFR,695372.73,EA,Miniature Substations
 3720,Removal of ABC 120mm² (per span),46.47,EA,
@@ -381,7 +381,7 @@ SAP #,SHORT DESCRIPTION,RATE,UNIT,CATEGORY
 3929,CAB LV XLPE 25 4C AL SWA,213.1,M,Low Voltage Cable
 393,LUG 35-95 MECH M12,177.85,EA,Cable Lugs
 3930,CAB LV XLPE 35 4C AL SWA,278.24,M,Low Voltage Cable
-3935,Connecting of kW/h meters,276.25,EA,
+3930,Connecting of kW/h meters,276.25,EA,
 3931,CAB LV XLPE 50 4C AL SWA,371.6,M,Low Voltage Cable
 3932,CAB LV XLPE 95 4C AL SWA,564.01,M,Low Voltage Cable
 3933,CAB LV XLPE 150 4C AL SWA,814.55,M,Low Voltage Cable
@@ -410,7 +410,7 @@ SAP #,SHORT DESCRIPTION,RATE,UNIT,CATEGORY
 4284,HEXING CUSTOMER INTERFACE UNIT(CIU),889.51,EA,Electricity Meters
 4285,HEXING 3PHASE 4WIRE POSTPAID 400V,4239.82,EA,Electricity Meters
 430,"Lamp:250W,230V,TUB,E40,MH",365.48,EA,Metal Halide Lamps
-431,Laying of 185mm x3 MV 3 core cable,70.64,M,
+430,Laying of 185mm x3 MV 3 core cable,70.64,M,
 440,Laying of 95mm x3 MV 3 core cable,51.73,M,
 450,Laying of 20 pair control cable,45.77,M,
 453,CAB LV ABC 25 2C AL,180.09,M,Aerial Bundled Conductor
@@ -420,11 +420,11 @@ SAP #,SHORT DESCRIPTION,RATE,UNIT,CATEGORY
 460,Laying of LV 4 core cable 300mm2,68.66,M,
 470,Laying of LV 4 core cable 70 to185mm2,45.91,M,
 480,Laying of LV 4 core cable 25 to 35mm2,91.21,M,
-483,"Pole:13.8m,12m,With Access Cover,Steel",10264.92,EA,Poles & Masts
+480,"Pole:13.8m,12m,With Access Cover,Steel",10264.92,EA,Poles & Masts
 481,"Pole:11.5m,10m,With Access Cover,SteelA6",7616.9,EA,Poles & Masts
 482,"Pole:9.2m,8m,With Access Cover,Steel A7",6253.92,EA,Poles & Masts
 490,"Bracket:Lighting,Mounting Luminaires",997.07,EA,Streetlight Accessories
-491,Install cable in tunnels 300mm2 3 core,131.74,M,
+490,Install cable in tunnels 300mm2 3 core,131.74,M,
 50,Rock wedge & power drill,338.6,M3,
 500,Install cable in tunnels 185mm2 3 core,100.72,M,
 5044,CAB LV 16 SCC CU,233.57,M,Aerial Bundled Conductor
@@ -436,7 +436,7 @@ SAP #,SHORT DESCRIPTION,RATE,UNIT,CATEGORY
 518,IPC 25-95/10-16 ABC SERVICE,89.26,EA,Overhead Network Accessories
 519,IPC 25-95/1.5-6 ABC SL,88.57,EA,Overhead Network Accessories
 520,Install cable in tunnels hard drawn bare copper,91.22,M,
-522,IPC 120/120 ABC MAIN,122.93,EA,Overhead Network Accessories
+520,IPC 120/120 ABC MAIN,122.93,EA,Overhead Network Accessories
 5201,MSS PLINTH TYPE B,11641.91,EA,Plinths
 521,IPC 120/10-16 ABC SERVICE,117.56,EA,Overhead Network Accessories
 5218,CONTACTOR SL 80A 3 PHASE AC3,1835.11,EA,Streetlight Accessories

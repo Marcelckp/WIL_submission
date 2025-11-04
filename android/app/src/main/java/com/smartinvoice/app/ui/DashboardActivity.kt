@@ -2,12 +2,15 @@ package com.smartinvoice.app.ui
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.PopupMenu
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.datepicker.MaterialDatePicker
+import com.google.android.material.snackbar.Snackbar
 import com.smartinvoice.app.R
 import com.smartinvoice.app.data.remote.ApiService
 import com.smartinvoice.app.data.remote.models.InvoiceResponse
@@ -28,6 +31,36 @@ class DashboardActivity : AppCompatActivity() {
     private var startDateMillis: Long? = null
     private var endDateMillis: Long? = null
     private val periodPrefs by lazy { getSharedPreferences("dashboard_period", MODE_PRIVATE) }
+    private val pollingHandler = Handler(Looper.getMainLooper())
+    private var pollingRunnable: Runnable? = null
+    private val POLLING_INTERVAL = 5_000L // 5 seconds
+    private var previousInvoiceCount = 0
+    private var previousTotalAmount = 0.0
+    private var currentUserId: String? = null
+    private var isInitialized = false
+
+    override fun onResume() {
+        super.onResume()
+        // Only check for user changes after activity is initialized
+        if (isInitialized) {
+            val userId = prefs.getUserId()
+            if (userId != currentUserId) {
+                // User changed - reset everything and reload
+                currentUserId = userId
+                previousInvoiceCount = 0
+                previousTotalAmount = 0.0
+                // Recreate API service to ensure we're using the latest token
+                apiService = com.smartinvoice.app.data.remote.ApiClient.create(this)
+                // Stop any existing polling
+                pollingRunnable?.let {
+                    pollingHandler.removeCallbacks(it)
+                }
+                // Reload data and restart polling
+                loadDashboardData()
+                startPolling()
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,8 +70,19 @@ class DashboardActivity : AppCompatActivity() {
         apiService = com.smartinvoice.app.data.remote.ApiClient.create(this)
         prefs = SharedPreferencesHelper.getInstance(this)
 
+        // Initialize current user ID to detect user changes
+        currentUserId = prefs.getUserId()
+
+        // Reset previous stats when activity starts (ensures new user sees correct data)
+        previousInvoiceCount = 0
+        previousTotalAmount = 0.0
+
         setupViews()
         loadDashboardData()
+        startPolling()
+        
+        // Mark as initialized after setup is complete
+        isInitialized = true
     }
 
     private fun setupViews() {
@@ -165,24 +209,45 @@ class DashboardActivity : AppCompatActivity() {
         finish()
     }
 
-    private fun loadDashboardData() {
-        binding.progressBar.visibility = View.VISIBLE
+    private fun loadDashboardData(showLoading: Boolean = true) {
+        if (showLoading) {
+            binding.progressBar.visibility = View.VISIBLE
+        }
 
         lifecycleScope.launch {
             try {
                 val response = apiService.getInvoices()
-                updateDashboardStatistics(response.invoices)
+                updateDashboardStatistics(response.invoices, isPolling = !showLoading)
             } catch (e: Exception) {
                 e.printStackTrace()
                 // Show error or use default values
-                updateDashboardStatistics(emptyList())
+                updateDashboardStatistics(emptyList(), isPolling = !showLoading)
             } finally {
-                binding.progressBar.visibility = View.GONE
+                if (showLoading) {
+                    binding.progressBar.visibility = View.GONE
+                }
             }
         }
     }
+    
+    private fun startPolling() {
+        pollingRunnable = object : Runnable {
+            override fun run() {
+                loadDashboardData(showLoading = false) // Don't show loading spinner during polling
+                pollingHandler.postDelayed(this, POLLING_INTERVAL)
+            }
+        }
+        pollingHandler.post(pollingRunnable!!)
+    }
+    
+    override fun onDestroy() {
+        super.onDestroy()
+        pollingRunnable?.let {
+            pollingHandler.removeCallbacks(it)
+        }
+    }
 
-    private fun updateDashboardStatistics(invoices: List<InvoiceResponse>) {
+    private fun updateDashboardStatistics(invoices: List<InvoiceResponse>, isPolling: Boolean = false) {
         binding.apply {
             val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
             val start = startDateMillis
@@ -201,6 +266,31 @@ class DashboardActivity : AppCompatActivity() {
             val totalAmount = filtered
                 .filter { it.total != null }
                 .sumOf { it.total!!.toDoubleOrNull() ?: 0.0 }
+
+            // Show notifications for changes (only during polling)
+            if (isPolling && previousInvoiceCount > 0) {
+                if (totalInvoices > previousInvoiceCount) {
+                    val newCount = totalInvoices - previousInvoiceCount
+                    Snackbar.make(
+                        binding.root,
+                        "$newCount new invoice${if (newCount > 1) "s" else ""} received",
+                        Snackbar.LENGTH_LONG
+                    ).show()
+                }
+                
+                if (totalAmount > previousTotalAmount) {
+                    val increase = totalAmount - previousTotalAmount
+                    val formattedIncrease = currencyFormatter.format(increase)
+                    Snackbar.make(
+                        binding.root,
+                        "Total amount increased by $formattedIncrease",
+                        Snackbar.LENGTH_LONG
+                    ).show()
+                }
+            }
+
+            previousInvoiceCount = totalInvoices
+            previousTotalAmount = totalAmount
 
             totalInvoicesValue.text = totalInvoices.toString()
             

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { apiClient } from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
+import toast from "react-hot-toast";
 
 interface Invoice {
   id: string;
@@ -44,6 +45,7 @@ export default function InvoicesPage() {
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("");
   const isInitialLoad = useRef(true);
+  const previousInvoicesRef = useRef<Map<string, Invoice>>(new Map());
 
   const fetchInvoices = useCallback(
     async (isPolling = false) => {
@@ -81,6 +83,57 @@ export default function InvoicesPage() {
               );
             })
           ) {
+            // Detect changes for notifications (only during polling)
+            if (isPolling && !isInitialLoad.current) {
+              const prevMap = previousInvoicesRef.current;
+
+              // Find new invoices
+              data.invoices.forEach((newInv) => {
+                if (!prevMap.has(newInv.id)) {
+                  toast.success(
+                    `New invoice: ${
+                      newInv.invoiceNumber ||
+                      `Draft-${newInv.id.substring(0, 8)}`
+                    }`,
+                    { duration: 5000 }
+                  );
+                } else {
+                  // Check for status changes
+                  const prevInv = prevMap.get(newInv.id);
+                  if (prevInv && prevInv.status !== newInv.status) {
+                    const statusLabels: Record<string, string> = {
+                      DRAFT: "Draft",
+                      SUBMITTED: "Submitted",
+                      APPROVED: "Approved",
+                      REJECTED: "Rejected",
+                      FINAL: "Final",
+                    };
+                    toast(
+                      `Invoice ${
+                        newInv.invoiceNumber || newInv.id.substring(0, 8)
+                      } status changed: ${
+                        statusLabels[prevInv.status] || prevInv.status
+                      } → ${statusLabels[newInv.status] || newInv.status}`,
+                      {
+                        duration: 5000,
+                        icon: "ℹ️",
+                      }
+                    );
+                  }
+                }
+              });
+
+              // Update previous invoices map
+              previousInvoicesRef.current = new Map(
+                data.invoices.map((inv) => [inv.id, inv])
+              );
+            } else if (!isPolling) {
+              // Initialize previous invoices map on first load
+              previousInvoicesRef.current = new Map(
+                data.invoices.map((inv) => [inv.id, inv])
+              );
+            }
+
             return data.invoices;
           }
           return prevInvoices;

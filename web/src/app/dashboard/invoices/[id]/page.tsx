@@ -147,18 +147,30 @@ export default function InvoiceDetailPage() {
         fetchInvoiceDetails();
       } else if (data.comments.length > 0) {
         // Only comments changed, update comments list
-        setInvoice((prev) =>
-          prev
-            ? {
-                ...prev,
-                comments: [...prev.comments, ...data.comments].sort(
-                  (a, b) =>
-                    new Date(a.createdAt).getTime() -
-                    new Date(b.createdAt).getTime()
-                ),
-              }
-            : null
-        );
+        // Filter out duplicates by comment ID before merging
+        setInvoice((prev) => {
+          if (!prev) return null;
+          
+          const existingCommentIds = new Set(prev.comments.map(c => c.id));
+          const newComments = data.comments.filter(c => !existingCommentIds.has(c.id));
+          
+          // Update lastUpdateTime to prevent re-fetching the same comments
+          setLastUpdateTime(data.lastUpdatedAt);
+          
+          if (newComments.length === 0) {
+            // No new comments, return previous state unchanged
+            return prev;
+          }
+          
+          return {
+            ...prev,
+            comments: [...prev.comments, ...newComments].sort(
+              (a, b) =>
+                new Date(a.createdAt).getTime() -
+                new Date(b.createdAt).getTime()
+            ),
+          };
+        });
       }
     } catch (err) {
       // Silently fail polling

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { apiClient } from "@/lib/api";
+import toast from "react-hot-toast";
 
 interface MetricsResponse {
   totals: {
@@ -27,6 +28,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isInitialLoad = useRef(true);
+  const previousMetricsRef = useRef<MetricsResponse | null>(null);
 
   const fetchMetrics = useCallback(async (isPolling = false) => {
     // Only show loading spinner on initial load, not during polling
@@ -39,7 +41,10 @@ export default function DashboardPage() {
 
       // Only update state if data actually changed (prevents unnecessary re-renders)
       setMetrics((prevMetrics) => {
-        if (!prevMetrics) return data;
+        if (!prevMetrics) {
+          previousMetricsRef.current = data;
+          return data;
+        }
 
         // Check if metrics changed
         const totalsChanged =
@@ -54,6 +59,35 @@ export default function DashboardPage() {
           prevMetrics.largestInvoice?.total !== data.largestInvoice?.total;
 
         if (totalsChanged || largestChanged) {
+          // Show notifications for changes (only during polling)
+          if (
+            isPolling &&
+            !isInitialLoad.current &&
+            previousMetricsRef.current
+          ) {
+            const prev = previousMetricsRef.current;
+
+            // Notify on new invoice count increase
+            if (data.totals.totalCount > prev.totals.totalCount) {
+              const newCount = data.totals.totalCount - prev.totals.totalCount;
+              toast.success(
+                `${newCount} new invoice${newCount > 1 ? "s" : ""} received`,
+                { duration: 5000 }
+              );
+            }
+
+            // Notify on revenue changes
+            if (data.totals.approvedRevenue > prev.totals.approvedRevenue) {
+              const increase =
+                data.totals.approvedRevenue - prev.totals.approvedRevenue;
+              toast.success(
+                `Approved revenue increased by R${increase.toFixed(2)}`,
+                { duration: 5000 }
+              );
+            }
+          }
+
+          previousMetricsRef.current = data;
           return data;
         }
         return prevMetrics;

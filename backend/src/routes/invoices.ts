@@ -116,11 +116,11 @@ invoicesRouter.post("/", authenticateToken, async (req: AuthRequest, res) => {
         customerEmail: data.customerEmail,
         projectSite: data.projectSite,
         preparedBy: data.preparedBy,
-        area: data.area,
-        jobNo: data.jobNo,
-        grn: data.grn,
-        po: data.po,
-        address: data.address,
+        ...(data.area && { area: data.area }),
+        ...(data.jobNo && { jobNo: data.jobNo }),
+        ...(data.grn && { grn: data.grn }),
+        ...(data.po && { po: data.po }),
+        ...(data.address && { address: data.address }),
         status: "DRAFT",
         invoiceNumber, // Assign invoice number on creation
         createdBy: userId,
@@ -160,6 +160,12 @@ invoicesRouter.get("/", authenticateToken, async (req: AuthRequest, res) => {
   const offset = Number(req.query.offset) || 0;
 
   const where: any = { companyId: req.user!.companyId };
+
+  // Operators only see their own invoices
+  if (req.user!.role === "OPERATOR") {
+    where.createdBy = req.user!.id;
+  }
+
   if (status) {
     where.status = status;
   }
@@ -209,8 +215,15 @@ invoicesRouter.get(
   authenticateToken,
   async (req: AuthRequest, res) => {
     const companyId = req.user!.companyId;
+    const where: any = { companyId };
+
+    // Operators only see metrics for their own invoices
+    if (req.user!.role === "OPERATOR") {
+      where.createdBy = req.user!.id;
+    }
+
     const invoices = await prisma.invoice.findMany({
-      where: { companyId },
+      where,
       select: {
         id: true,
         total: true,
@@ -410,6 +423,11 @@ invoicesRouter.get("/:id", authenticateToken, async (req: AuthRequest, res) => {
     return res.sendStatus(404);
   }
 
+  // Operators can only access their own invoices
+  if (req.user!.role === "OPERATOR" && invoice.createdBy !== req.user!.id) {
+    return res.sendStatus(403);
+  }
+
   res.json(invoice);
 });
 
@@ -424,6 +442,11 @@ invoicesRouter.patch(
 
     if (!invoice || invoice.companyId !== req.user!.companyId) {
       return res.sendStatus(404);
+    }
+
+    // Operators can only update their own invoices
+    if (req.user!.role === "OPERATOR" && invoice.createdBy !== req.user!.id) {
+      return res.sendStatus(403);
     }
 
     // Invoice becomes immutable once submitted
@@ -458,11 +481,11 @@ invoicesRouter.patch(
           customerEmail: data.customerEmail,
           projectSite: data.projectSite,
           preparedBy: data.preparedBy,
-          area: data.area,
-          jobNo: data.jobNo,
-          grn: data.grn,
-          po: data.po,
-          address: data.address,
+          ...(data.area !== undefined && { area: data.area }),
+          ...(data.jobNo !== undefined && { jobNo: data.jobNo }),
+          ...(data.grn !== undefined && { grn: data.grn }),
+          ...(data.po !== undefined && { po: data.po }),
+          ...(data.address !== undefined && { address: data.address }),
           lines: data.lines
             ? {
                 create: data.lines.map((line) => ({
@@ -506,6 +529,11 @@ invoicesRouter.post(
 
     if (!invoice || invoice.companyId !== req.user!.companyId) {
       return res.sendStatus(404);
+    }
+
+    // Operators can only submit their own invoices
+    if (req.user!.role === "OPERATOR" && invoice.createdBy !== req.user!.id) {
+      return res.sendStatus(403);
     }
 
     if (invoice.status !== "DRAFT") {

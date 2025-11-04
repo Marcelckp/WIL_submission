@@ -678,6 +678,10 @@ class InvoiceDetailActivity : AppCompatActivity() {
                             Toast.LENGTH_SHORT
                         ).show()
                     }
+                } else {
+                    // Even if nothing changed, update lastUpdateTime to prevent re-fetching
+                    // This prevents duplicate comments if the backend returns the same comments
+                    lastUpdateTime = updates.lastUpdatedAt
                 }
             } catch (e: Exception) {
                 // Silently fail polling - don't spam user with errors
