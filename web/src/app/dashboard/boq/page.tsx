@@ -113,11 +113,15 @@ export default function BoqPage() {
       selectedVersion === "active" ? "" : `?version=${selectedVersion}`;
     try {
       const response = await apiClient.get(`/boq/export${params}`, {
-        responseType: "blob" as any,
+        responseType: "blob",
       });
-      const blob = new Blob([response.data], {
-        type: "text/csv;charset=utf-8;",
-      });
+
+      // Handle blob response
+      const blob =
+        response.data instanceof Blob
+          ? response.data
+          : new Blob([response.data], { type: "text/csv;charset=utf-8;" });
+
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -129,7 +133,20 @@ export default function BoqPage() {
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch (e: any) {
-      alert("Failed to export BOQ: " + (e.response?.data?.error || e.message));
+      // Try to parse error if it's a blob
+      let errorMessage = "Unknown error";
+      if (e.response?.data instanceof Blob) {
+        try {
+          const text = await e.response.data.text();
+          const json = JSON.parse(text);
+          errorMessage = json.error || text;
+        } catch {
+          errorMessage = "Failed to download CSV";
+        }
+      } else {
+        errorMessage = e.response?.data?.error || e.message || "Unknown error";
+      }
+      alert("Failed to export BOQ: " + errorMessage);
     }
   };
 
@@ -147,11 +164,15 @@ export default function BoqPage() {
   const exportVersionCsv = async (version: number) => {
     try {
       const response = await apiClient.get(`/boq/export?version=${version}`, {
-        responseType: "blob" as any,
+        responseType: "blob",
       });
-      const blob = new Blob([response.data], {
-        type: "text/csv;charset=utf-8;",
-      });
+
+      // Handle blob response
+      const blob =
+        response.data instanceof Blob
+          ? response.data
+          : new Blob([response.data], { type: "text/csv;charset=utf-8;" });
+
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -161,7 +182,20 @@ export default function BoqPage() {
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch (e: any) {
-      alert("Failed to export BOQ: " + (e.response?.data?.error || e.message));
+      // Try to parse error if it's a blob
+      let errorMessage = "Unknown error";
+      if (e.response?.data instanceof Blob) {
+        try {
+          const text = await e.response.data.text();
+          const json = JSON.parse(text);
+          errorMessage = json.error || text;
+        } catch {
+          errorMessage = "Failed to download CSV";
+        }
+      } else {
+        errorMessage = e.response?.data?.error || e.message || "Unknown error";
+      }
+      alert("Failed to export BOQ: " + errorMessage);
     }
   };
 
@@ -187,14 +221,17 @@ export default function BoqPage() {
 
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Upload Excel File (BOQ format)
+            Upload BOQ File (Excel .xlsx or CSV)
           </label>
           <input
             type="file"
-            accept=".xlsx,.xls"
+            accept=".xlsx,.xls,.csv"
             onChange={handleFileChange}
             className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
           />
+          <p className="mt-1 text-xs text-gray-500">
+            Supported formats: Excel (.xlsx, .xls) or CSV (.csv)
+          </p>
         </div>
 
         <div className="mb-6 flex items-start gap-2">

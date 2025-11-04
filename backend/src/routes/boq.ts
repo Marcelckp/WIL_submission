@@ -1,6 +1,7 @@
 import { Router } from "express";
 import multer from "multer";
 import { validateBoqWorkbook } from "../services/boqValidator.js";
+import { validateBoqCSV } from "../services/csvParser.js";
 import { authenticateToken, requireRole, AuthRequest } from "../middleware/auth.js";
 import { prisma } from "../lib/prisma.js";
 import { uploadBlob } from "../services/firebaseStorage.js";
@@ -9,14 +10,27 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 
 
 export const boqRouter = Router();
 
-// Upload BOQ (ADMIN only)
+// Upload BOQ (ADMIN only) - Supports both Excel (.xlsx) and CSV files
 boqRouter.post("/upload", authenticateToken, requireRole("ADMIN"), upload.single("file"), async (req: AuthRequest, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "No file uploaded. Field name should be 'file'." });
   }
 
   try {
-    const result = await validateBoqWorkbook(req.file.buffer);
+    const fileExtension = req.file.originalname.split('.').pop()?.toLowerCase();
+    let result;
+
+    // Determine file type and validate accordingly
+    if (fileExtension === 'csv') {
+      result = await validateBoqCSV(req.file.buffer);
+    } else if (fileExtension === 'xlsx' || fileExtension === 'xls') {
+      result = await validateBoqWorkbook(req.file.buffer);
+    } else {
+      return res.status(400).json({ 
+        error: "Unsupported file type. Please upload a CSV or Excel (.xlsx) file." 
+      });
+    }
+
     if (result.issues.length) {
       return res.status(422).json({ status: "invalid", ...result });
     }
@@ -64,7 +78,7 @@ boqRouter.post("/upload", authenticateToken, requireRole("ADMIN"), upload.single
     });
   } catch (error) {
     return res.status(500).json({
-      error: "Failed to process Excel file",
+      error: "Failed to process file",
       details: error instanceof Error ? error.message : "Unknown error",
     });
   }

@@ -1,7 +1,9 @@
 /// <reference types="node" />
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
-import { cityPowerBoqItems } from "./boq-data.js";
+import { readFileSync } from "fs";
+import { join } from "path";
+import { validateBoqCSV } from "../src/services/csvParser.js";
 
 const prisma = new PrismaClient();
 
@@ -89,8 +91,34 @@ async function main() {
     },
   });
 
-  // Create initial BOQ for City Power using data from boq-data.ts
-  const boqItems = cityPowerBoqItems;
+  // Create initial BOQ for City Power using CSV file
+  const csvPath = join(__dirname, "city-power-boq.csv");
+  let boqItems: Array<{
+    sapNumber: string;
+    shortDescription: string;
+    unit: string;
+    rate: string;
+    category?: string | null;
+  }> = [];
+
+  try {
+    const csvContent = readFileSync(csvPath, "utf-8");
+    const result = await validateBoqCSV(Buffer.from(csvContent, "utf-8"));
+    if (result.issues.length > 0) {
+      console.error("CSV validation issues:", result.issues);
+      throw new Error(
+        `CSV validation failed: ${result.issues.map((i) => i.message).join(", ")}`
+      );
+    }
+    boqItems = result.items;
+    console.log(`Loaded ${boqItems.length} BOQ items from CSV`);
+  } catch (error) {
+    console.error(`Failed to load CSV file from ${csvPath}:`, error);
+    console.log("Falling back to TypeScript data import...");
+    // Fallback to TypeScript import if CSV fails
+    const { cityPowerBoqItems } = await import("./boq-data.js");
+    boqItems = cityPowerBoqItems;
+  }
 
   // Check if BOQ already exists to avoid duplicates on re-seed
   const existingBoq = await prisma.boq.findFirst({

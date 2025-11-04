@@ -35,7 +35,8 @@ class InvoiceDetailActivity : AppCompatActivity() {
     private var lastUpdateTime: Long = 0
     
     private val itemsAdapter = InvoiceItemsAdapter(
-        onDelete = null // Read-only in detail view
+        onDelete = null, // Read-only in detail view
+        invoiceStatus = null // Will be set when invoice is loaded
     )
     
     private val commentsAdapter = CommentsAdapter()
@@ -162,6 +163,14 @@ class InvoiceDetailActivity : AppCompatActivity() {
             // Status badge
             updateStatusBadge(invoice.status)
 
+            // Update adapter with invoice status to control delete button visibility
+            // Create new adapter instance with the correct status
+            val newAdapter = InvoiceItemsAdapter(
+                onDelete = null, // Read-only in detail view
+                invoiceStatus = invoice.status
+            )
+            itemsRecyclerView.adapter = newAdapter
+
             // Line items - create a simplified adapter list
             val lineItems = invoice.lines?.map { line ->
                 InvoiceLineItem(
@@ -178,7 +187,7 @@ class InvoiceDetailActivity : AppCompatActivity() {
                     total = line.amount.toDoubleOrNull() ?: 0.0
                 )
             } ?: emptyList()
-            itemsAdapter.submitList(lineItems)
+            newAdapter.submitList(lineItems)
 
             // Totals - Calculate from line items if totals are null (for DRAFT invoices)
             val calculatedSubtotal = invoice.subtotal?.let {

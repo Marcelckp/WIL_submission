@@ -21,7 +21,7 @@ apiClient.interceptors.request.use((config) => {
 // Handle 401 errors (unauthorized)
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('auth_token');
       window.location.href = '/login';

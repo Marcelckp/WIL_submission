@@ -58,8 +58,13 @@ export default function BoqDetailsPage() {
   const exportCsv = async () => {
     if (!data) return
     try {
-      const response = await apiClient.get(`/boq/export?version=${data.version}`, { responseType: 'blob' as any })
-      const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' })
+      const response = await apiClient.get(`/boq/export?version=${data.version}`, { responseType: 'blob' })
+      
+      // Handle blob response
+      const blob = response.data instanceof Blob 
+        ? response.data 
+        : new Blob([response.data], { type: 'text/csv;charset=utf-8;' })
+      
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -69,7 +74,20 @@ export default function BoqDetailsPage() {
       a.remove()
       window.URL.revokeObjectURL(url)
     } catch (e: any) {
-      alert('Failed to export CSV: ' + (e.response?.data?.error || e.message))
+      // Try to parse error if it's a blob
+      let errorMessage = 'Unknown error'
+      if (e.response?.data instanceof Blob) {
+        try {
+          const text = await e.response.data.text()
+          const json = JSON.parse(text)
+          errorMessage = json.error || text
+        } catch {
+          errorMessage = 'Failed to download CSV'
+        }
+      } else {
+        errorMessage = e.response?.data?.error || e.message || 'Unknown error'
+      }
+      alert('Failed to export CSV: ' + errorMessage)
     }
   }
 

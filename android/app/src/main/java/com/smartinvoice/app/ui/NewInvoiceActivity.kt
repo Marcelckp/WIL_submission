@@ -91,7 +91,8 @@ class NewInvoiceActivity : AppCompatActivity() {
                 invoiceItems.removeAll { it.id == item.id }
                 itemsAdapter.submitList(invoiceItems.toList())
                 calculateTotal()
-            }
+            },
+            invoiceStatus = "DRAFT" // NewInvoiceActivity is always for drafts
         )
 
         photosAdapter = PhotoAdapter(

@@ -10,7 +10,8 @@ import com.smartinvoice.app.databinding.ItemInvoiceLineBinding
 import java.util.*
 
 class InvoiceItemsAdapter(
-    private val onDelete: ((InvoiceLineItem) -> Unit)?
+    private val onDelete: ((InvoiceLineItem) -> Unit)?,
+    private val invoiceStatus: String? = null // Add invoice status parameter
 ) : ListAdapter<InvoiceLineItem, InvoiceItemsAdapter.ItemViewHolder>(ItemDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ItemViewHolder {
@@ -19,7 +20,7 @@ class InvoiceItemsAdapter(
             parent,
             false
         )
-        return ItemViewHolder(binding, onDelete ?: {})
+        return ItemViewHolder(binding, onDelete ?: {}, invoiceStatus)
     }
 
     override fun onBindViewHolder(holder: ItemViewHolder, position: Int) {
@@ -28,7 +29,8 @@ class InvoiceItemsAdapter(
 
     class ItemViewHolder(
         private val binding: ItemInvoiceLineBinding,
-        private val onDelete: ((InvoiceLineItem) -> Unit)?
+        private val onDelete: ((InvoiceLineItem) -> Unit)?,
+        private val invoiceStatus: String? = null
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(item: InvoiceLineItem) {
@@ -41,7 +43,16 @@ class InvoiceItemsAdapter(
                     onDelete?.invoke(item)
                 }
                 
-                deleteButton.visibility = if (onDelete != null) View.VISIBLE else View.GONE
+                // Hide delete button if:
+                // 1. onDelete is null (read-only mode)
+                // 2. Invoice status is FINAL, SUBMITTED, APPROVED, or REJECTED (immutable invoices)
+                val shouldShowDelete = onDelete != null && 
+                    invoiceStatus != "FINAL" && 
+                    invoiceStatus != "SUBMITTED" && 
+                    invoiceStatus != "APPROVED" && 
+                    invoiceStatus != "REJECTED"
+                
+                deleteButton.visibility = if (shouldShowDelete) View.VISIBLE else View.GONE
             }
         }
     }
