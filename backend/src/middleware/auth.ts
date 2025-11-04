@@ -30,6 +30,11 @@ export function authenticateToken(
     req.user = decoded;
     next();
   } catch (err) {
+    console.error(
+      "Token verification failed:",
+      err instanceof Error ? err.message : err
+    );
+    console.error("JWT_SECRET configured:", JWT_SECRET ? "Yes" : "No");
     return res.status(403).json({ error: "Invalid or expired token" });
   }
 }

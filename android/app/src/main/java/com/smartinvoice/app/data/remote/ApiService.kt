@@ -50,6 +50,12 @@ interface ApiService {
         @Body request: Map<String, String>
     ): CommentResponse
 
+    @POST("invoices/{id}/email")
+    suspend fun sendInvoiceEmail(
+        @Path("id") id: String,
+        @Body request: SendEmailRequest
+    ): SendEmailResponse
+
     @Multipart
     @POST("invoices/{id}/media")
     suspend fun uploadMedia(
@@ -69,6 +75,15 @@ data class MediaResponse(
     val url: String,
     val mimeType: String?,
     val createdAt: String
+)
+
+data class SendEmailRequest(
+    val to: String
+)
+
+data class SendEmailResponse(
+    val status: String,
+    val messageId: String?
 )
 
 class AuthInterceptor(private val tokenProvider: () -> String?) : Interceptor {

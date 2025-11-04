@@ -146,27 +146,26 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:weightSum="2">
+                    android:orientation="vertical">
 
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/totalInvoicesCard"
-                        android:layout_width="0dp"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
                         app:cardBackgroundColor="#40000000"
                         app:cardCornerRadius="@dimen/corner_radius_medium"
                         app:cardElevation="0dp"
                         app:strokeWidth="0dp"
                         app:strokeColor="@android:color/transparent"
-                        android:layout_marginEnd="@dimen/margin_small">
+                        android:layout_marginBottom="@dimen/margin_small">
 
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="vertical"
                             android:gravity="center"
-                            android:padding="@dimen/padding_medium">
+                            android:padding="@dimen/padding_medium"
+                            android:minHeight="100dp">
 
                             <TextView
                                 android:id="@+id/totalInvoicesValue"
@@ -175,7 +174,9 @@
                                 android:text="0"
                                 android:textSize="@dimen/text_size_xxlarge"
                                 android:textStyle="bold"
-                                android:textColor="@color/text_white" />
+                                android:textColor="@color/text_white"
+                                android:maxLines="1"
+                                android:ellipsize="none" />
 
                             <TextView
                                 android:layout_width="wrap_content"
@@ -188,22 +189,21 @@
 
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/totalAmountCard"
-                        android:layout_width="0dp"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
                         app:cardBackgroundColor="#40000000"
                         app:cardCornerRadius="@dimen/corner_radius_medium"
                         app:cardElevation="0dp"
                         app:strokeWidth="0dp"
-                        app:strokeColor="@android:color/transparent"
-                        android:layout_marginStart="@dimen/margin_small">
+                        app:strokeColor="@android:color/transparent">
 
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="vertical"
                             android:gravity="center"
-                            android:padding="@dimen/padding_medium">
+                            android:padding="@dimen/padding_medium"
+                            android:minHeight="100dp">
 
                             <TextView
                                 android:id="@+id/totalAmountValue"
@@ -212,7 +212,10 @@
                                 android:text="R0.00"
                                 android:textSize="@dimen/text_size_xxlarge"
                                 android:textStyle="bold"
-                                android:textColor="@color/text_white" />
+                                android:textColor="@color/text_white"
+                                android:maxLines="1"
+                                android:ellipsize="end"
+                                android:singleLine="true" />
 
                             <TextView
                                 android:layout_width="wrap_content"

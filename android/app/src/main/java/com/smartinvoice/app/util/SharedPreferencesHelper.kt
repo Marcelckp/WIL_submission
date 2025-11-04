@@ -57,5 +57,13 @@ class SharedPreferencesHelper(context: Context) {
     fun isLoggedIn(): Boolean {
         return getToken() != null && getUserId() != null
     }
+    
+    fun saveBoqItemsJson(json: String) {
+        prefs.edit().putString("boq_items_cache", json).apply()
+    }
+    
+    fun getBoqItemsJson(): String? {
+        return prefs.getString("boq_items_cache", null)
+    }
 }
 

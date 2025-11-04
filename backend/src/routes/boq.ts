@@ -3,6 +3,7 @@ import multer from "multer";
 import { validateBoqWorkbook } from "../services/boqValidator.js";
 import { authenticateToken, requireRole, AuthRequest } from "../middleware/auth.js";
 import { prisma } from "../lib/prisma.js";
+import { uploadBlob } from "../services/firebaseStorage.js";
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
@@ -222,6 +223,18 @@ boqRouter.get("/export", authenticateToken, async (req: AuthRequest, res) => {
     return v;
   };
   const csv = [header, ...lines].map((row) => row.map(escape).join(",")).join("\n");
+
+  // Store CSV in Firebase Storage for future reference
+  try {
+    const csvBuffer = Buffer.from(csv, "utf-8");
+    const csvFileName = `boq-v${boq.version}-${Date.now()}.csv`;
+    const csvPath = `boq/${req.user!.companyId}/${csvFileName}`;
+    const csvUrl = await uploadBlob("boq", csvPath, csvBuffer, "text/csv");
+    console.log(`BOQ CSV exported and stored: ${csvUrl}`);
+  } catch (error) {
+    console.error("Failed to store CSV in Firebase Storage:", error);
+    // Continue even if storage fails - CSV is still sent to client
+  }
 
   res.setHeader("Content-Type", "text/csv; charset=utf-8");
   res.setHeader(

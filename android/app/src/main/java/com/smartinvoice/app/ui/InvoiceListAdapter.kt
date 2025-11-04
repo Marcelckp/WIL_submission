@@ -36,12 +36,46 @@ class InvoiceListAdapter(
 
         fun bind(invoice: InvoiceResponse, formatter: NumberFormat) {
             binding.apply {
-                invoiceNumberText.text = invoice.invoiceNumber ?: "Pending"
+                // Show invoice number or a draft identifier if not available
+                invoiceNumberText.text = invoice.invoiceNumber ?: "Draft-${invoice.id.take(8)}"
                 customerText.text = invoice.customerName
-                totalAmountText.text = invoice.total?.let { 
-                    formatter.format(it.toDoubleOrNull() ?: 0.0)
-                } ?: "R0.00"
-                itemsCountText.text = "${invoice.lines.size} items"
+                
+                // Update status badge
+                statusBadge.text = invoice.status
+                
+                // Set vibrant text colors for better contrast
+                val textColor = when (invoice.status) {
+                    "DRAFT" -> android.graphics.Color.parseColor("#1E40AF") // Dark blue
+                    "SUBMITTED" -> android.graphics.Color.parseColor("#92400E") // Dark amber
+                    "FINAL", "APPROVED" -> android.graphics.Color.parseColor("#065F46") // Dark green
+                    "REJECTED" -> android.graphics.Color.parseColor("#991B1B") // Dark red
+                    else -> android.graphics.Color.parseColor("#1E40AF")
+                }
+                statusBadge.setTextColor(textColor)
+                
+                val drawableRes = when (invoice.status) {
+                    "DRAFT" -> com.smartinvoice.app.R.drawable.status_badge_draft
+                    "SUBMITTED" -> com.smartinvoice.app.R.drawable.status_badge_submitted
+                    "FINAL", "APPROVED" -> com.smartinvoice.app.R.drawable.status_badge_final
+                    "REJECTED" -> com.smartinvoice.app.R.drawable.status_badge_rejected
+                    else -> com.smartinvoice.app.R.drawable.status_badge_draft
+                }
+                statusBadge.setBackgroundResource(drawableRes)
+                
+                // Calculate total from lines if total is null (for draft invoices)
+                val displayTotal = invoice.total?.let { 
+                    it.toDoubleOrNull() ?: 0.0
+                } ?: run {
+                    // Calculate from line items for draft invoices
+                    invoice.lines?.sumOf { line ->
+                        val qty = line.quantity.toDoubleOrNull() ?: 0.0
+                        val price = line.unitPrice.toDoubleOrNull() ?: 0.0
+                        qty * price
+                    } ?: 0.0
+                }
+                totalAmountText.text = if (displayTotal > 0) formatter.format(displayTotal) else "-"
+                
+                itemsCountText.text = "${invoice.lines?.size ?: 0} items"
                 dateText.text = invoice.date
                 projectSiteText.text = invoice.projectSite ?: ""
 

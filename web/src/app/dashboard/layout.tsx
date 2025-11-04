@@ -4,6 +4,15 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useAuthStore } from "@/store/authStore";
+import { apiClient } from "@/lib/api";
+
+interface Company {
+  id: string;
+  name: string;
+  vatNumber: string | null;
+  address: string | null;
+  logoUrl: string | null;
+}
 
 export default function DashboardLayout({
   children,
@@ -16,6 +25,9 @@ export default function DashboardLayout({
   const logout = useAuthStore((state) => state.logout);
   const user = useAuthStore((state) => state.user);
 
+  const [company, setCompany] = useState<Company | null>(null);
+  const [logoError, setLogoError] = useState(false);
+
   // Prevent hydration mismatches by waiting until mounted
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -27,6 +39,21 @@ export default function DashboardLayout({
       router.push("/login");
     }
   }, [mounted, isAuthenticated, router]);
+
+  // Fetch company data including logo URL
+  useEffect(() => {
+    if (mounted && isAuthenticated) {
+      const fetchCompany = async () => {
+        try {
+          const { data } = await apiClient.get<Company>("/company");
+          setCompany(data);
+        } catch (error) {
+          console.error("Failed to fetch company:", error);
+        }
+      };
+      fetchCompany();
+    }
+  }, [mounted, isAuthenticated]);
 
   if (!mounted) return null;
   if (!isAuthenticated) return null;
@@ -43,10 +70,19 @@ export default function DashboardLayout({
           <div className="flex justify-between h-16">
             <div className="flex">
               <div className="flex-shrink-0 flex items-center">
-                <Link href="/dashboard">
-                  <h1 className="text-xl font-bold text-gray-900">
-                    Smart Invoice Capture
-                  </h1>
+                <Link href="/dashboard" className="flex items-center">
+                  {company?.logoUrl && !logoError ? (
+                    <img
+                      src={company.logoUrl}
+                      alt={company.name || "Company Logo"}
+                      className="h-10 w-auto max-w-[200px] object-contain"
+                      onError={() => setLogoError(true)}
+                    />
+                  ) : (
+                    <h1 className="text-xl font-bold text-gray-900">
+                      Smart Invoice Capture
+                    </h1>
+                  )}
                 </Link>
               </div>
               <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
@@ -95,11 +131,7 @@ export default function DashboardLayout({
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        {children}
-      </main>
+      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">{children}</main>
     </div>
   );
 }
-
-

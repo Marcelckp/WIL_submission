@@ -3,9 +3,12 @@ package com.smartinvoice.app.ui
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.PopupMenu
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.datepicker.MaterialDatePicker
+import com.smartinvoice.app.R
 import com.smartinvoice.app.data.remote.ApiService
 import com.smartinvoice.app.data.remote.models.InvoiceResponse
 import com.smartinvoice.app.databinding.ActivityDashboardBinding
@@ -111,7 +114,55 @@ class DashboardActivity : AppCompatActivity() {
                 }
                 picker.show(supportFragmentManager, "rangePicker")
             }
+
+            // Setup settings button with logout menu
+            settingsButton.setOnClickListener {
+                showSettingsMenu(it)
+            }
         }
+    }
+
+    private fun showSettingsMenu(view: View) {
+        val popupMenu = PopupMenu(this, view)
+        
+        // Create a simple menu item for logout
+        val menu = popupMenu.menu
+        menu.add(0, 1, 0, getString(R.string.logout))
+        
+        popupMenu.setOnMenuItemClickListener { item ->
+            if (item.itemId == 1) {
+                showLogoutConfirmation()
+                true
+            } else {
+                false
+            }
+        }
+        popupMenu.show()
+    }
+
+    private fun showLogoutConfirmation() {
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.logout))
+            .setMessage(getString(R.string.logout_confirmation))
+            .setPositiveButton(getString(R.string.yes)) { _, _ ->
+                logout()
+            }
+            .setNegativeButton(getString(R.string.no), null)
+            .show()
+    }
+
+    private fun logout() {
+        // Clear all stored preferences
+        prefs.clear()
+        
+        // Clear dashboard period preferences
+        periodPrefs.edit().clear().apply()
+        
+        // Navigate to login screen
+        val intent = Intent(this, LoginActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        finish()
     }
 
     private fun loadDashboardData() {
@@ -152,7 +203,22 @@ class DashboardActivity : AppCompatActivity() {
                 .sumOf { it.total!!.toDoubleOrNull() ?: 0.0 }
 
             totalInvoicesValue.text = totalInvoices.toString()
-            totalAmountValue.text = currencyFormatter.format(totalAmount)
+            
+            // Format amount and set with tooltip
+            val formattedAmount = currencyFormatter.format(totalAmount)
+            totalAmountValue.text = formattedAmount
+            
+            // Set content description for accessibility and potential tooltip
+            totalAmountValue.contentDescription = formattedAmount
+            totalAmountValue.setOnLongClickListener {
+                // Show full value in a toast when long-pressed
+                android.widget.Toast.makeText(
+                    this@DashboardActivity,
+                    "Total Amount: $formattedAmount",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+                true
+            }
         }
     }
 

@@ -27,35 +27,83 @@ export async function generateInvoicePdf(invoiceId: string): Promise<Buffer> {
 
   doc.on("data", (chunk) => buffers.push(chunk));
 
-  // Header
-  doc.fontSize(20).text("TAX INVOICE", { align: "right" });
-  doc.moveDown();
+  // Header - TAX INVOICE
+  doc.fontSize(24).font("Helvetica-Bold").text("TAX INVOICE", { align: "right" });
+  doc.moveDown(0.5);
 
-  // Company info
+  // Company info (left side)
+  doc.fontSize(14).font("Helvetica-Bold");
   if (invoice.company.name) {
-    doc.fontSize(14).text(invoice.company.name, { continued: false });
+    doc.text(invoice.company.name, { continued: false });
   }
+  doc.fontSize(10).font("Helvetica");
   if (invoice.company.vatNumber) {
-    doc.fontSize(10).text(`VAT NO: ${invoice.company.vatNumber}`);
+    doc.text(`VAT NO: ${invoice.company.vatNumber}`);
   }
   if (invoice.company.address) {
-    doc.fontSize(10).text(invoice.company.address);
+    doc.text(invoice.company.address);
   }
-  doc.moveDown();
+  doc.moveDown(1);
 
-  // Invoice details
+  // Invoice details - Two column layout
   doc.fontSize(10);
-  doc.text(`DATE: ${invoice.date}`, { continued: true });
-  doc.text(`INVOICE NO: ${invoice.invoiceNumber || "Pending"}`, {
-    align: "right",
-  });
-  doc.text(`AREA:`, { continued: true });
-  doc.text(`JOB NO:`, { align: "right" });
-  doc.text(`PO:`, { continued: true });
-  doc.text(`GRN:`, { align: "right" });
-  doc.text(`ADDRESS:`, { continued: true });
-  doc.text(`CLIENT: ${invoice.customerName}`, { align: "right" });
-  doc.moveDown();
+  const leftColumnX = 50;
+  const rightColumnX = 350;
+  let currentY = doc.y;
+
+  // Left column
+  doc.text(`DATE: ${invoice.date}`, leftColumnX, currentY);
+  currentY += 18;
+  
+  if (invoice.area) {
+    doc.text(`AREA: ${invoice.area}`, leftColumnX, currentY);
+    currentY += 18;
+  } else {
+    doc.text(`AREA:`, leftColumnX, currentY);
+    currentY += 18;
+  }
+  
+  if (invoice.po) {
+    doc.text(`PO: ${invoice.po}`, leftColumnX, currentY);
+    currentY += 18;
+  } else {
+    doc.text(`PO:`, leftColumnX, currentY);
+    currentY += 18;
+  }
+  
+  if (invoice.address) {
+    doc.text(`ADDRESS: ${invoice.address}`, leftColumnX, currentY, { width: 280 });
+  } else {
+    doc.text(`ADDRESS:`, leftColumnX, currentY);
+  }
+
+  // Right column
+  currentY = doc.y - (invoice.area ? 54 : invoice.po ? 36 : 18);
+  const invoiceNumber = invoice.invoiceNumber || "Pending";
+  doc.text(`INVOICE NO: ${invoiceNumber}`, rightColumnX, currentY, { align: "right", width: 200 });
+  currentY += 18;
+  
+  if (invoice.jobNo) {
+    doc.text(`JOB NO: ${invoice.jobNo}`, rightColumnX, currentY, { align: "right", width: 200 });
+    currentY += 18;
+  } else {
+    doc.text(`JOB NO:`, rightColumnX, currentY, { align: "right", width: 200 });
+    currentY += 18;
+  }
+  
+  if (invoice.grn) {
+    doc.text(`GRN: ${invoice.grn}`, rightColumnX, currentY, { align: "right", width: 200 });
+    currentY += 18;
+  } else {
+    doc.text(`GRN:`, rightColumnX, currentY, { align: "right", width: 200 });
+    currentY += 18;
+  }
+  
+  doc.text(`CLIENT: ${invoice.customerName}`, rightColumnX, currentY, { align: "right", width: 200 });
+
+  // Move to next section
+  doc.y = Math.max(doc.y, currentY + 10);
+  doc.moveDown(1);
 
   // Items table
   doc.fontSize(10);
@@ -66,51 +114,59 @@ export async function generateInvoicePdf(invoiceId: string): Promise<Buffer> {
   const unitStartX = 400;
   const rateStartX = 450;
   const amountStartX = 500;
+  const tableWidth = 500;
 
   // Headers
   doc.font("Helvetica-Bold");
   doc.text("Item", itemStartX, tableTop);
   doc.text("Description", descStartX, tableTop);
-  doc.text("Qty", qtyStartX, tableTop);
-  doc.text("Unit", unitStartX, tableTop);
-  doc.text("Rate", rateStartX, tableTop);
-  doc.text("Amount", amountStartX, tableTop);
-  doc.moveDown(0.5);
-
-  // Table lines
-  doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
-  doc.moveDown(0.3);
+  doc.text("Qty", qtyStartX, tableTop, { width: 40, align: "right" });
+  doc.text("Unit", unitStartX, tableTop, { width: 40 });
+  doc.text("Rate", rateStartX, tableTop, { width: 50, align: "right" });
+  doc.text("Amount", amountStartX, tableTop, { width: 50, align: "right" });
+  
+  // Horizontal line under headers
+  doc.moveTo(itemStartX, tableTop + 12).lineTo(itemStartX + tableWidth, tableTop + 12).stroke();
+  doc.y = tableTop + 20;
 
   // Items
   doc.font("Helvetica");
-  let currentY = doc.y;
+  let currentYPos = doc.y;
   invoice.lines.forEach((line) => {
-    if (currentY > 700) {
-      // New page if needed
+    // Check if we need a new page
+    if (currentYPos > 650) {
       doc.addPage();
-      currentY = 50;
+      currentYPos = 50;
     }
 
     const qty = parseFloat(line.quantity || "0");
     const rate = parseFloat(line.unitPrice || "0");
     const amount = qty * rate;
 
-    doc.text(line.itemName, itemStartX, currentY, { width: 100 });
-    doc.text(line.description || line.itemName, descStartX, currentY, {
-      width: 190,
-    });
-    doc.text(qty.toFixed(2), qtyStartX, currentY, { width: 40 });
-    doc.text(line.unit, unitStartX, currentY, { width: 40 });
-    doc.text(`R ${rate.toFixed(2)}`, rateStartX, currentY, { width: 50 });
-    doc.text(`R ${amount.toFixed(2)}`, amountStartX, currentY, { width: 50 });
+    // Calculate height needed for this row (handle wrapping)
+    const itemHeight = Math.max(
+      20,
+      doc.heightOfString(line.itemName, { width: 90 }) + 4,
+      doc.heightOfString(line.description || line.itemName, { width: 180 }) + 4
+    );
 
-    currentY += 20;
-    doc.y = currentY;
+    // Draw item row
+    doc.text(line.itemName, itemStartX, currentYPos, { width: 90 });
+    doc.text(line.description || line.itemName, descStartX, currentYPos, { width: 180 });
+    doc.text(qty.toFixed(2), qtyStartX, currentYPos, { width: 40, align: "right" });
+    doc.text(line.unit, unitStartX, currentYPos, { width: 40 });
+    doc.text(`R ${rate.toFixed(2)}`, rateStartX, currentYPos, { width: 50, align: "right" });
+    doc.text(`R ${amount.toFixed(2)}`, amountStartX, currentYPos, { width: 50, align: "right" });
+
+    currentYPos += itemHeight;
+    doc.y = currentYPos;
   });
 
-  doc.moveDown(1);
+  // Horizontal line after items
+  doc.moveTo(itemStartX, currentYPos + 5).lineTo(itemStartX + tableWidth, currentYPos + 5).stroke();
+  doc.y = currentYPos + 15;
 
-  // Totals
+  // Totals section
   const subtotal = invoice.lines.reduce(
     (sum, line) =>
       sum +
@@ -122,20 +178,42 @@ export async function generateInvoicePdf(invoiceId: string): Promise<Buffer> {
   const total = subtotal + vatAmount;
 
   doc.font("Helvetica-Bold");
-  doc.text(`SUB-TOTAL R ${subtotal.toFixed(2)}`, { align: "right" });
-  doc.text(`VAT R ${vatAmount.toFixed(2)}`, { align: "right" });
-  doc.text(`TOTAL R ${total.toFixed(2)}`, { align: "right" });
+  doc.text(`SUB-TOTAL R ${subtotal.toFixed(2)}`, { align: "right", width: 150 });
+  doc.text(`VAT R ${vatAmount.toFixed(2)}`, { align: "right", width: 150 });
+  doc.fontSize(12);
+  doc.text(`TOTAL R ${total.toFixed(2)}`, { align: "right", width: 150 });
 
-  doc.moveDown(2);
+  doc.moveDown(2.5);
 
   // Banking details
   if (invoice.company.address) {
     doc
       .fontSize(10)
       .font("Helvetica-Bold")
-      .text("Banking Details", { align: "center" });
+      .text("Banking Details", 50);
+    doc.moveDown(0.5);
     doc.font("Helvetica");
-    doc.text(invoice.company.address);
+    // Split address into words and add them properly formatted
+    const addressWords = invoice.company.address.split(/\s+/);
+    let addressLine = "";
+    const maxLineWidth = 300;
+    
+    addressWords.forEach((word) => {
+      const testLine = addressLine ? `${addressLine} ${word}` : word;
+      const testWidth = doc.widthOfString(testLine);
+      
+      if (testWidth > maxLineWidth && addressLine) {
+        doc.text(addressLine, 50);
+        doc.moveDown(0.3);
+        addressLine = word;
+      } else {
+        addressLine = testLine;
+      }
+    });
+    
+    if (addressLine) {
+      doc.text(addressLine, 50);
+    }
   }
 
   doc.end();

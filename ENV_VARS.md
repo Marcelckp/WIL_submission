@@ -9,10 +9,22 @@ PORT=3000
 DATABASE_URL="file:./dev.db"
 JWT_SECRET="change-me"
 
-# Azure Blob Storage (required in production for PDFs/media)
-AZURE_STORAGE_ACCOUNT="your-account"
-AZURE_STORAGE_KEY="your-key"
-AZURE_BLOB_CONTAINER_INVOICES="invoices"
+# Firebase Cloud Storage Configuration
+# Get these from Firebase Console: https://console.firebase.google.com/
+# 1. Go to Project Settings > Service Accounts
+# 2. Click "Generate New Private Key" to download JSON
+# 3. Copy the entire JSON content and paste it here (as a single-line JSON string)
+FIREBASE_SERVICE_ACCOUNT_KEY='{"type":"service_account","project_id":"your-project-id",...}'
+# Your Firebase Storage bucket name (e.g., "your-project.appspot.com")
+FIREBASE_STORAGE_BUCKET="your-project-id.appspot.com"
+
+# Email Configuration (Resend API)
+RESEND_API_KEY="re_your_api_key_here"
+EMAIL_FROM="onboarding@resend.dev"  # or your verified domain email
+
+# Optional: auto-send invoice emails on approval
+SEND_EMAIL_ON_APPROVE=true
+DEFAULT_INVOICE_EMAIL_TO="customer@example.com"
 ```
 
 ## Web (`web/.env.local`)

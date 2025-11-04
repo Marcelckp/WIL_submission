@@ -12,8 +12,14 @@ data class InvoiceLineRequest(
 data class CreateInvoiceRequest(
     val date: String,
     val customerName: String,
+    val customerEmail: String? = null,
     val projectSite: String? = null,
     val preparedBy: String? = null,
+    val area: String? = null,
+    val jobNo: String? = null,
+    val grn: String? = null,
+    val po: String? = null,
+    val address: String? = null,
     val lines: List<InvoiceLineRequest>? = null
 )
 
@@ -22,8 +28,14 @@ data class InvoiceResponse(
     val invoiceNumber: String?,
     val date: String,
     val customerName: String,
+    val customerEmail: String?,
     val projectSite: String?,
     val preparedBy: String?,
+    val area: String?,
+    val jobNo: String?,
+    val grn: String?,
+    val po: String?,
+    val address: String?,
     val status: String,
     val subtotal: String?,
     val vatPercent: String?,
@@ -33,8 +45,9 @@ data class InvoiceResponse(
     val serverPdfUrl: String?,
     val createdAt: String,
     val updatedAt: String,
-    val lines: List<InvoiceLineResponse>,
-    val comments: List<CommentResponse>? = null
+    val lines: List<InvoiceLineResponse>?,
+    val comments: List<CommentResponse>? = null,
+    val media: List<MediaResponse>? = null
 )
 
 data class InvoiceLineResponse(
@@ -64,5 +77,13 @@ data class InvoiceUpdatesResponse(
 
 data class RejectRequest(
     val reason: String
+)
+
+data class MediaResponse(
+    val id: String,
+    val url: String,
+    val mimeType: String?,
+    val source: String?,
+    val createdAt: String
 )
 

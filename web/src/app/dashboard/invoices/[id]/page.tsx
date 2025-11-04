@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
-import apiClient from "@/lib/api";
+import { apiClient } from "@/lib/api";
 
 interface InvoiceLine {
   id: string;
@@ -74,17 +74,57 @@ export default function InvoiceDetailPage() {
   const [submittingComment, setSubmittingComment] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [lastUpdateTime, setLastUpdateTime] = useState(0);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [emailAddress, setEmailAddress] = useState("");
 
   const fetchInvoiceDetails = useCallback(async () => {
     if (!user || !invoiceId) return;
 
     try {
       setError(null);
+      setLoading(true);
       const { data } = await apiClient.get<Invoice>(`/invoices/${invoiceId}`);
-      setInvoice(data);
+      
+      // Validate required fields
+      if (!data) {
+        throw new Error("Invoice data is empty");
+      }
+      
+      if (!data.company) {
+        throw new Error("Company information is missing");
+      }
+      
+      // Ensure arrays are initialized if backend returns null/undefined
+      const invoiceData: Invoice = {
+        ...data,
+        lines: data.lines || [],
+        media: data.media || [],
+        comments: data.comments || [],
+      };
+      
+      setInvoice(invoiceData);
       setLastUpdateTime(new Date(data.updatedAt).getTime());
     } catch (err: any) {
-      setError(err.response?.data?.error || "Failed to load invoice details");
+      console.error("Error fetching invoice:", err);
+      let errorMessage = "Failed to load invoice details";
+      
+      if (err.response) {
+        // Server responded with error status
+        if (err.response.status === 404) {
+          errorMessage = "Invoice not found";
+        } else if (err.response.status === 403) {
+          errorMessage = "You don't have permission to view this invoice";
+        } else if (err.response.data?.error) {
+          errorMessage = err.response.data.error;
+        } else {
+          errorMessage = `Server error: ${err.response.status}`;
+        }
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -130,13 +170,13 @@ export default function InvoiceDetailPage() {
     fetchInvoiceDetails();
   }, [fetchInvoiceDetails]);
 
-  // Poll for updates every 10 seconds
+  // Poll for updates every 5 seconds
   useEffect(() => {
     if (!invoice) return;
 
     const interval = setInterval(() => {
       checkForUpdates();
-    }, 10000); // 10 seconds
+    }, 5000); // 5 seconds
 
     return () => clearInterval(interval);
   }, [invoice, checkForUpdates]);
@@ -217,6 +257,37 @@ export default function InvoiceDetailPage() {
     }
   };
 
+  const handleSendEmail = async () => {
+    if (!emailAddress.trim()) {
+      alert("Please enter an email address");
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailAddress.trim())) {
+      alert("Please enter a valid email address");
+      return;
+    }
+
+    try {
+      setSendingEmail(true);
+      await apiClient.post(`/invoices/${invoiceId}/email`, {
+        to: emailAddress.trim(),
+      });
+      alert("Email sent successfully!");
+      setEmailDialogOpen(false);
+      setEmailAddress("");
+    } catch (error: any) {
+      alert(
+        "Failed to send email: " +
+          (error.response?.data?.error || "Unknown error")
+      );
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
@@ -237,15 +308,17 @@ export default function InvoiceDetailPage() {
 
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
+      case "DRAFT":
+        return "bg-blue-400 text-blue-900 font-bold shadow-md rounded";
       case "SUBMITTED":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-amber-400 text-amber-900 font-bold shadow-md rounded";
       case "APPROVED":
       case "FINAL":
-        return "bg-green-100 text-green-800";
+        return "bg-emerald-400 text-emerald-900 font-bold shadow-md rounded";
       case "REJECTED":
-        return "bg-red-100 text-red-800";
+        return "bg-red-400 text-red-900 font-bold shadow-md rounded";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-300 text-gray-800 font-bold shadow-md rounded";
     }
   };
 
@@ -302,13 +375,13 @@ export default function InvoiceDetailPage() {
             </div>
             <div className="text-right">
               <span
-                className={`px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ${getStatusBadgeClass(
+                className={`px-2 py-1 inline-flex text-sm leading-5 font-semibold rounded ${getStatusBadgeClass(
                   invoice.status
                 )}`}
               >
                 {invoice.status}
               </span>
-              {invoice.rejectionReason && (
+              {invoice.rejectionReason && invoice.status === "DRAFT" && (
                 <p className="mt-2 text-sm text-red-600 max-w-xs">
                   {invoice.rejectionReason}
                 </p>
@@ -558,30 +631,96 @@ export default function InvoiceDetailPage() {
             </div>
           </div>
 
-          {/* PDF Link */}
-          {invoice.status === "FINAL" && invoice.serverPdfUrl && (
-            <div className="border-t border-gray-200 pt-4">
-              <a
-                href={invoice.serverPdfUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                <svg
-                  className="w-5 h-5 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          {/* PDF Link and Email */}
+          {(invoice.status === "FINAL" || invoice.status === "APPROVED") &&
+            invoice.serverPdfUrl && (
+              <div className="border-t border-gray-200 pt-4">
+                <div className="flex items-center space-x-3">
+                  <a
+                    href={invoice.serverPdfUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  >
+                    <svg
+                      className="w-5 h-5 mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                    View/Download PDF
+                  </a>
+                  <button
+                    onClick={() => setEmailDialogOpen(true)}
+                    className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                  >
+                    <svg
+                      className="w-5 h-5 mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                      />
+                    </svg>
+                    Send Email
+                  </button>
+                </div>
+              </div>
+            )}
+
+          {/* Email Dialog */}
+          {emailDialogOpen && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                <h3 className="text-lg font-semibold mb-4">Send Invoice Email</h3>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={emailAddress}
+                    onChange={(e) => setEmailAddress(e.target.value)}
+                    placeholder="Enter email address"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter") {
+                        handleSendEmail();
+                      }
+                    }}
                   />
-                </svg>
-                View/Download PDF
-              </a>
+                </div>
+                <div className="flex justify-end space-x-3">
+                  <button
+                    onClick={() => {
+                      setEmailDialogOpen(false);
+                      setEmailAddress("");
+                    }}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSendEmail}
+                    disabled={sendingEmail || !emailAddress.trim()}
+                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                  >
+                    {sendingEmail ? "Sending..." : "Send Email"}
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>

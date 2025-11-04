@@ -48,6 +48,7 @@
     <string name="date">Date</string>
     <string name="prepared_by">Prepared By</string>
     <string name="customer_name">Customer Name</string>
+    <string name="customer_email">Customer Email</string>
     <string name="project_site">Project / Site</string>
     <string name="area">Area</string>
     <string name="job_no">Job No</string>
@@ -71,6 +72,7 @@
     
     <!-- Invoice Detail -->
     <string name="invoice_detail">Invoice Detail</string>
+    <string name="invoice_details">Invoice Details</string>
     <string name="subtotal">Subtotal</string>
     <string name="vat">VAT</string>
     <string name="comments">Comments</string>
@@ -79,11 +81,22 @@
     <string name="no_comments">No comments yet</string>
     <string name="no_photos">No photos attached</string>
     <string name="view_pdf">View PDF</string>
+    <string name="send_email">Send Email</string>
+    <string name="send_email_recipient">Send Email</string>
+    <string name="enter_email_address">Enter email address</string>
+    <string name="email_sent_successfully">Email sent successfully</string>
+    <string name="failed_to_send_email">Failed to send email</string>
     <string name="pending">Pending</string>
     <string name="submitted">Submitted</string>
     <string name="approved">Approved</string>
     <string name="rejected">Rejected</string>
     <string name="status_final">Final</string>
     <string name="draft">Draft</string>
+    
+    <!-- Logout -->
+    <string name="logout">Logout</string>
+    <string name="logout_confirmation">Are you sure you want to logout?</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
 </resources>
 

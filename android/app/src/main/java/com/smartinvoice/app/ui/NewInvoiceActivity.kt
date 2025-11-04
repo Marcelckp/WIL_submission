@@ -25,6 +25,10 @@ import com.smartinvoice.app.util.SharedPreferencesHelper
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import java.net.ConnectException
+import java.net.SocketTimeoutException
 
 data class InvoiceLineItem(
     val id: String = UUID.randomUUID().toString(),
@@ -46,6 +50,9 @@ class NewInvoiceActivity : AppCompatActivity() {
     private val photoUris: MutableList<Uri> = mutableListOf()
     private val boqItems: MutableList<BoqItemResponse> = mutableListOf()
     private var selectedBoqItem: BoqItemResponse? = null
+    
+    private var invoiceId: String? = null // For editing existing invoice
+    private var isEditMode = false
     
     private val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     private val apiDateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
@@ -98,6 +105,13 @@ class NewInvoiceActivity : AppCompatActivity() {
         setupDateField()
         loadBoqItems()
         showOfflineDisclaimer()
+        
+        // Check if editing existing invoice
+        invoiceId = intent.getStringExtra("invoice_id")
+        if (invoiceId != null) {
+            isEditMode = true
+            loadInvoiceForEdit()
+        }
     }
 
     private fun setupViews() {
@@ -163,17 +177,10 @@ class NewInvoiceActivity : AppCompatActivity() {
     }
 
     private fun setupBoqAutocomplete() {
-        val adapter = BoqAutocompleteAdapter(
-            this,
-            android.R.layout.simple_dropdown_item_1line,
-            boqItems
-        ) { item ->
-            "${item.sapNumber} - ${item.shortDescription} (${item.unit}) - R${item.rate}"
-        }
-
-        binding.boqItemAutoComplete.setAdapter(adapter)
+        updateBoqAdapter()
 
         binding.boqItemAutoComplete.setOnItemClickListener { _, _, position, _ ->
+            val adapter = binding.boqItemAutoComplete.adapter as BoqAutocompleteAdapter
             val item = adapter.getItem(position)
             selectedBoqItem = item
             val label = "${item.sapNumber} - ${item.shortDescription} (${item.unit}) - R${item.rate}"
@@ -195,25 +202,95 @@ class NewInvoiceActivity : AppCompatActivity() {
 
     private fun loadBoqItems() {
         lifecycleScope.launch {
+            // Try loading cached BOQ items first for faster startup
+            loadCachedBoqItems()
+            
             try {
                 val response = apiService.getActiveBoqItems("", 1000)
                 boqItems.clear()
                 boqItems.addAll(response.items)
                 
+                // Save to cache for offline use
+                val gson = Gson()
+                val json = gson.toJson(response.items)
+                prefs.saveBoqItemsJson(json)
+                
                 // Update autocomplete adapter
-                val adapter = BoqAutocompleteAdapter(
-                    this@NewInvoiceActivity,
-                    android.R.layout.simple_dropdown_item_1line,
-                    boqItems
-                ) { item ->
-                    "${item.sapNumber} - ${item.shortDescription} (${item.unit}) - R${item.rate}"
+                updateBoqAdapter()
+                
+            } catch (e: ConnectException) {
+                // Connection error - use cached data if available
+                if (boqItems.isEmpty()) {
+                    Toast.makeText(
+                        this@NewInvoiceActivity,
+                        "Cannot connect to server. Please check your connection and ensure the backend is running.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                } else {
+                    Toast.makeText(
+                        this@NewInvoiceActivity,
+                        "Using cached BOQ items. Server unavailable.",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
-                binding.boqItemAutoComplete.setAdapter(adapter)
+            } catch (e: SocketTimeoutException) {
+                if (boqItems.isEmpty()) {
+                    Toast.makeText(
+                        this@NewInvoiceActivity,
+                        "Connection timeout. Please check your network.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                } else {
+                    Toast.makeText(
+                        this@NewInvoiceActivity,
+                        "Using cached BOQ items. Server timeout.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
-                Toast.makeText(this@NewInvoiceActivity, "Failed to load BOQ items: ${e.message}", Toast.LENGTH_LONG).show()
+                if (boqItems.isEmpty()) {
+                    Toast.makeText(
+                        this@NewInvoiceActivity,
+                        "Failed to load BOQ items: ${e.message}. Please check your connection.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                } else {
+                    Toast.makeText(
+                        this@NewInvoiceActivity,
+                        "Using cached BOQ items. ${e.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             }
         }
+    }
+    
+    private fun loadCachedBoqItems() {
+        try {
+            val cachedJson = prefs.getBoqItemsJson()
+            if (cachedJson != null) {
+                val gson = Gson()
+                val type = object : TypeToken<List<BoqItemResponse>>() {}.type
+                val cachedItems: List<BoqItemResponse> = gson.fromJson(cachedJson, type)
+                boqItems.clear()
+                boqItems.addAll(cachedItems)
+                updateBoqAdapter()
+            }
+        } catch (e: Exception) {
+            // Ignore cache errors, will try API
+        }
+    }
+    
+    private fun updateBoqAdapter() {
+        val adapter = BoqAutocompleteAdapter(
+            this@NewInvoiceActivity,
+            android.R.layout.simple_dropdown_item_1line,
+            boqItems
+        ) { item ->
+            "${item.sapNumber} - ${item.shortDescription} (${item.unit}) - R${item.rate}"
+        }
+        binding.boqItemAutoComplete.setAdapter(adapter)
     }
 
     private fun addItem() {
@@ -258,6 +335,74 @@ class NewInvoiceActivity : AppCompatActivity() {
         binding.totalAmountText.text = String.format(Locale.getDefault(), "R%.2f", total)
     }
 
+    private fun loadInvoiceForEdit() {
+        val id = invoiceId ?: return
+        
+        lifecycleScope.launch {
+            try {
+                binding.progressBar.visibility = View.VISIBLE
+                val invoice = apiService.getInvoice(id)
+                
+                // Populate form fields
+                binding.apply {
+                    // Convert date from yyyy-MM-dd to dd/MM/yyyy
+                    val date = try {
+                        val parsed = apiDateFormat.parse(invoice.date) ?: Date()
+                        dateFormat.format(parsed)
+                    } catch (e: Exception) {
+                        invoice.date
+                    }
+                    dateEditText.setText(date)
+                    
+                    customerNameEditText.setText(invoice.customerName)
+                    customerEmailEditText.setText(invoice.customerEmail ?: "")
+                    projectSiteEditText.setText(invoice.projectSite ?: "")
+                    preparedByEditText.setText(invoice.preparedBy ?: "")
+                    binding.areaEditText.setText(invoice.area ?: "")
+                    binding.jobNoEditText.setText(invoice.jobNo ?: "")
+                    binding.grnEditText.setText(invoice.grn ?: "")
+                    binding.poEditText.setText(invoice.po ?: "")
+                    
+                    // Load line items
+                    invoice.lines?.forEach { line ->
+                        // Parse SAP number and description from itemName
+                        val parts = line.itemName.split(" - ", limit = 2)
+                        val sapNumber = parts.getOrNull(0) ?: ""
+                        val description = parts.getOrNull(1) ?: line.itemName
+                        
+                        val boqItem = BoqItemResponse(
+                            sapNumber = sapNumber,
+                            shortDescription = description,
+                            unit = line.unit,
+                            rate = line.unitPrice,
+                            category = null
+                        )
+                        
+                        val item = InvoiceLineItem(
+                            id = line.id,
+                            boqItem = boqItem,
+                            quantity = line.quantity.toDoubleOrNull() ?: 0.0,
+                            unitPrice = line.unitPrice.toDoubleOrNull() ?: 0.0,
+                            total = line.amount.toDoubleOrNull() ?: 0.0
+                        )
+                        invoiceItems.add(item)
+                    }
+                    itemsAdapter.submitList(invoiceItems.toList())
+                    calculateTotal()
+                    
+                    // Update button text
+                    saveInvoiceButton.text = getString(com.smartinvoice.app.R.string.save)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Toast.makeText(this@NewInvoiceActivity, "Failed to load invoice: ${e.message}", Toast.LENGTH_LONG).show()
+                finish()
+            } finally {
+                binding.progressBar.visibility = View.GONE
+            }
+        }
+    }
+    
     private fun showOfflineDisclaimer() {
         // Show disclaimer to inform users that rates are from cached BOQ
         binding.offlineBannerCard.visibility = View.VISIBLE
@@ -333,8 +478,14 @@ class NewInvoiceActivity : AppCompatActivity() {
         val invoiceRequest = CreateInvoiceRequest(
             date = date,
             customerName = customerName,
+            customerEmail = binding.customerEmailEditText.text.toString().trim().takeIf { it.isNotEmpty() },
             projectSite = binding.projectSiteEditText.text.toString().trim().takeIf { it.isNotEmpty() },
             preparedBy = binding.preparedByEditText.text.toString().trim().takeIf { it.isNotEmpty() },
+            area = binding.areaEditText.text.toString().trim().takeIf { it.isNotEmpty() },
+            jobNo = binding.jobNoEditText.text.toString().trim().takeIf { it.isNotEmpty() },
+            grn = binding.grnEditText.text.toString().trim().takeIf { it.isNotEmpty() },
+            po = binding.poEditText.text.toString().trim().takeIf { it.isNotEmpty() },
+            address = null, // Address field not in current UI, can be added later
             lines = invoiceItems.map { item ->
                 InvoiceLineRequest(
                     itemName = "${item.boqItem.sapNumber} - ${item.boqItem.shortDescription}",
@@ -353,23 +504,31 @@ class NewInvoiceActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
-                val invoice = apiService.createInvoice(invoiceRequest)
+                val invoice = if (isEditMode && invoiceId != null) {
+                    // Update existing invoice
+                    apiService.updateInvoice(invoiceId!!, invoiceRequest)
+                } else {
+                    // Create new invoice
+                    apiService.createInvoice(invoiceRequest)
+                }
                 
-                // Upload photos if any
-                photoUris.forEach { uri ->
-                    try {
-                        uploadPhoto(invoice.id, uri)
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                        // Continue even if photo upload fails
+                // Upload photos if any (only for new invoices, existing ones already have photos)
+                if (!isEditMode) {
+                    photoUris.forEach { uri ->
+                        try {
+                            uploadPhoto(invoice.id, uri)
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                            // Continue even if photo upload fails
+                        }
                     }
                 }
 
-                Toast.makeText(this@NewInvoiceActivity, "Invoice saved successfully", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@NewInvoiceActivity, if (isEditMode) "Invoice updated successfully" else "Invoice saved successfully", Toast.LENGTH_SHORT).show()
                 finish()
             } catch (e: Exception) {
                 e.printStackTrace()
-                Toast.makeText(this@NewInvoiceActivity, "Failed to save invoice: ${e.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(this@NewInvoiceActivity, "Failed to ${if (isEditMode) "update" else "save"} invoice: ${e.message}", Toast.LENGTH_LONG).show()
                 binding.saveInvoiceButton.isEnabled = true
                 binding.progressBar.visibility = View.GONE
             }

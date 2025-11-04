@@ -49,7 +49,7 @@ class InvoiceDetailActivity : AppCompatActivity() {
     
     private val pollingHandler = Handler(Looper.getMainLooper())
     private var pollingRunnable: Runnable? = null
-    private val POLLING_INTERVAL = 10_000L // 10 seconds
+    private val POLLING_INTERVAL = 5_000L // 5 seconds
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -74,6 +74,11 @@ class InvoiceDetailActivity : AppCompatActivity() {
 
     private fun setupViews() {
         binding.apply {
+            // Setup back button
+            backButton.setOnClickListener {
+                finish()
+            }
+            
             // Setup RecyclerViews
             itemsRecyclerView.layoutManager = LinearLayoutManager(this@InvoiceDetailActivity)
             itemsRecyclerView.adapter = itemsAdapter
@@ -90,8 +95,11 @@ class InvoiceDetailActivity : AppCompatActivity() {
 
             // Action buttons
             editButton.setOnClickListener {
-                // TODO: Navigate to edit screen
-                Toast.makeText(this@InvoiceDetailActivity, "Edit functionality coming soon", Toast.LENGTH_SHORT).show()
+                // Navigate to edit screen with invoice data
+                val id = invoice?.id ?: return@setOnClickListener
+                val intent = Intent(this@InvoiceDetailActivity, NewInvoiceActivity::class.java)
+                intent.putExtra("invoice_id", id)
+                startActivity(intent)
             }
 
             submitButton.setOnClickListener {
@@ -100,6 +108,10 @@ class InvoiceDetailActivity : AppCompatActivity() {
 
             viewPdfButton.setOnClickListener {
                 viewPdf()
+            }
+
+            sendEmailButton.setOnClickListener {
+                sendEmail()
             }
 
             addCommentButton.setOnClickListener {
@@ -130,8 +142,11 @@ class InvoiceDetailActivity : AppCompatActivity() {
 
     private fun updateUI(invoice: InvoiceResponse) {
         binding.apply {
+            // Update header with invoice number
+            invoiceNumberHeaderText.text = invoice.invoiceNumber ?: "Draft-${invoice.id.take(8)}"
+            
             // Invoice header
-            invoiceNumberText.text = invoice.invoiceNumber ?: getString(com.smartinvoice.app.R.string.pending)
+            invoiceNumberText.text = invoice.invoiceNumber ?: "Draft-${invoice.id.take(8)}"
             invoiceDateText.text = try {
                 displayDateFormat.format(dateFormat.parse(invoice.date) ?: Date())
             } catch (e: Exception) {
@@ -146,7 +161,7 @@ class InvoiceDetailActivity : AppCompatActivity() {
             updateStatusBadge(invoice.status)
 
             // Line items - create a simplified adapter list
-            val lineItems = invoice.lines.map { line ->
+            val lineItems = invoice.lines?.map { line ->
                 InvoiceLineItem(
                     id = line.id,
                     boqItem = com.smartinvoice.app.data.remote.models.BoqItemResponse(
@@ -160,21 +175,37 @@ class InvoiceDetailActivity : AppCompatActivity() {
                     unitPrice = line.unitPrice.toDoubleOrNull() ?: 0.0,
                     total = line.amount.toDoubleOrNull() ?: 0.0
                 )
-            }
+            } ?: emptyList()
             itemsAdapter.submitList(lineItems)
 
-            // Totals
-            subtotalText.text = invoice.subtotal?.let {
-                currencyFormat.format(it.toDoubleOrNull() ?: 0.0)
-            } ?: "R0.00"
+            // Totals - Calculate from line items if totals are null (for DRAFT invoices)
+            val calculatedSubtotal = invoice.subtotal?.let {
+                it.toDoubleOrNull() ?: 0.0
+            } ?: run {
+                // Calculate from line items for DRAFT invoices
+                invoice.lines?.sumOf { line ->
+                    val qty = line.quantity.toDoubleOrNull() ?: 0.0
+                    val price = line.unitPrice.toDoubleOrNull() ?: 0.0
+                    qty * price
+                } ?: 0.0
+            }
             
-            vatText.text = invoice.vatAmount?.let {
-                "${invoice.vatPercent ?: "15"}% - ${currencyFormat.format(it.toDoubleOrNull() ?: 0.0)}"
-            } ?: "R0.00"
+            val vatPercent = invoice.vatPercent?.toDoubleOrNull() ?: 15.0
+            val calculatedVat = invoice.vatAmount?.let {
+                it.toDoubleOrNull() ?: 0.0
+            } ?: run {
+                calculatedSubtotal * (vatPercent / 100.0)
+            }
             
-            totalText.text = invoice.total?.let {
-                currencyFormat.format(it.toDoubleOrNull() ?: 0.0)
-            } ?: "R0.00"
+            val calculatedTotal = invoice.total?.let {
+                it.toDoubleOrNull() ?: 0.0
+            } ?: run {
+                calculatedSubtotal + calculatedVat
+            }
+            
+            subtotalText.text = currencyFormat.format(calculatedSubtotal)
+            vatText.text = "${vatPercent.toInt()}% - ${currencyFormat.format(calculatedVat)}"
+            totalText.text = currencyFormat.format(calculatedTotal)
 
             // Comments
             invoice.comments?.let { comments ->
@@ -191,23 +222,58 @@ class InvoiceDetailActivity : AppCompatActivity() {
                 commentsRecyclerView.visibility = View.GONE
             }
 
+            // Show rejection feedback if invoice was rejected and set back to DRAFT
+            if (invoice.rejectionReason != null && invoice.status == "DRAFT") {
+                // Show rejection reason prominently
+                binding.rejectionReasonText?.visibility = View.VISIBLE
+                binding.rejectionReasonText?.text = "Rejection Feedback: ${invoice.rejectionReason}"
+            } else {
+                binding.rejectionReasonText?.visibility = View.GONE
+            }
+
+            // Display attachments/media
+            invoice.media?.let { mediaList ->
+                if (mediaList.isEmpty()) {
+                    binding.noPhotosText.visibility = View.VISIBLE
+                    binding.photosRecyclerView.visibility = View.GONE
+                } else {
+                    binding.noPhotosText.visibility = View.GONE
+                    binding.photosRecyclerView.visibility = View.VISIBLE
+                    // Convert media URLs to Uri objects for adapter
+                    val mediaUris = mediaList.map { media ->
+                        Uri.parse(media.url)
+                    }
+                    photosAdapter.submitList(mediaUris)
+                }
+            } ?: run {
+                binding.noPhotosText.visibility = View.VISIBLE
+                binding.photosRecyclerView.visibility = View.GONE
+            }
+
             // Action buttons based on status
             when (invoice.status) {
                 "DRAFT" -> {
                     editButton.visibility = View.VISIBLE
                     submitButton.visibility = View.VISIBLE
                     viewPdfButton.visibility = View.GONE
+                    sendEmailButton.visibility = View.GONE
                 }
-                "SUBMITTED", "APPROVED", "REJECTED" -> {
+                "SUBMITTED", "REJECTED" -> {
+                    // SUBMITTED and REJECTED invoices cannot be edited or submitted
                     editButton.visibility = View.GONE
                     submitButton.visibility = View.GONE
                     viewPdfButton.visibility = View.GONE
+                    sendEmailButton.visibility = View.GONE
                 }
-                "FINAL" -> {
+                "FINAL", "APPROVED" -> {
                     editButton.visibility = View.GONE
                     submitButton.visibility = View.GONE
-                    if (invoice.serverPdfUrl != null) {
+                    if (invoice.serverPdfUrl != null && !invoice.customerEmail.isNullOrBlank()) {
                         viewPdfButton.visibility = View.VISIBLE
+                        sendEmailButton.visibility = View.VISIBLE
+                    } else {
+                        viewPdfButton.visibility = if (invoice.serverPdfUrl != null) View.VISIBLE else View.GONE
+                        sendEmailButton.visibility = View.GONE
                     }
                 }
             }
@@ -217,6 +283,16 @@ class InvoiceDetailActivity : AppCompatActivity() {
     private fun updateStatusBadge(status: String) {
         val badge = binding.statusBadge
         badge.text = status
+        
+        // Set vibrant text colors for better contrast
+        val textColor = when (status) {
+            "DRAFT" -> android.graphics.Color.parseColor("#1E40AF") // Dark blue
+            "SUBMITTED" -> android.graphics.Color.parseColor("#92400E") // Dark amber
+            "FINAL", "APPROVED" -> android.graphics.Color.parseColor("#065F46") // Dark green
+            "REJECTED" -> android.graphics.Color.parseColor("#991B1B") // Dark red
+            else -> android.graphics.Color.parseColor("#1E40AF")
+        }
+        badge.setTextColor(textColor)
         
         val drawableRes = when (status) {
             "DRAFT" -> com.smartinvoice.app.R.drawable.status_badge_draft
@@ -256,29 +332,39 @@ class InvoiceDetailActivity : AppCompatActivity() {
 
     private fun viewPdf() {
         val id = invoiceId ?: return
+        val invoice = this.invoice
+        
+        if (invoice?.status != "FINAL" && invoice?.status != "APPROVED") {
+            Toast.makeText(this, "PDF is only available for approved invoices", Toast.LENGTH_SHORT).show()
+            return
+        }
         
         lifecycleScope.launch {
             try {
                 binding.progressBar.visibility = View.VISIBLE
                 
-                // Download PDF bytes
-                val token = prefs.getToken()
-                val client = okhttp3.OkHttpClient()
-                val request = okhttp3.Request.Builder()
-                    .url("${com.smartinvoice.app.BuildConfig.API_BASE_URL}invoices/$id/pdf")
-                    .addHeader("Authorization", "Bearer $token")
-                    .build()
+                // First try to use serverPdfUrl if available, otherwise download from API
+                val pdfBytes = if (invoice?.serverPdfUrl != null) {
+                    try {
+                        // Download from Firebase Storage URL
+                        downloadFromUrl(invoice.serverPdfUrl!!)
+                    } catch (e: Exception) {
+                        // Fallback to API endpoint
+                        downloadFromApi(id)
+                    }
+                } else {
+                    // Download from API endpoint
+                    downloadFromApi(id)
+                }
                 
-                val response = client.newCall(request).execute()
-                if (!response.isSuccessful) {
-                    Toast.makeText(this@InvoiceDetailActivity, "Failed to download PDF", Toast.LENGTH_SHORT).show()
+                if (pdfBytes == null || pdfBytes.isEmpty()) {
+                    Toast.makeText(this@InvoiceDetailActivity, "Failed to download PDF: Empty response", Toast.LENGTH_SHORT).show()
                     return@launch
                 }
                 
-                val pdfBytes = response.body?.bytes() ?: return@launch
-                
                 // Save to temporary file
-                val tempFile = java.io.File(getExternalFilesDir(null), "invoice_${id}.pdf")
+                val tempFile = java.io.File(getExternalFilesDir(null), "invoice_${invoice?.invoiceNumber ?: id}.pdf")
+                tempFile.parentFile?.mkdirs()
                 tempFile.writeBytes(pdfBytes)
                 
                 // Share PDF
@@ -286,55 +372,179 @@ class InvoiceDetailActivity : AppCompatActivity() {
                 
             } catch (e: Exception) {
                 e.printStackTrace()
-                Toast.makeText(this@InvoiceDetailActivity, "Failed to download PDF: ${e.message}", Toast.LENGTH_SHORT).show()
+                val errorMsg = e.message ?: "Unknown error occurred"
+                Toast.makeText(this@InvoiceDetailActivity, "Failed to download PDF: $errorMsg", Toast.LENGTH_LONG).show()
             } finally {
                 binding.progressBar.visibility = View.GONE
             }
         }
     }
     
+    private suspend fun downloadFromUrl(url: String): ByteArray {
+        val client = okhttp3.OkHttpClient()
+        val request = okhttp3.Request.Builder()
+            .url(url)
+            .build()
+        
+        val response = client.newCall(request).execute()
+        if (!response.isSuccessful) {
+            throw Exception("HTTP ${response.code}: ${response.message}")
+        }
+        
+        val body = response.body ?: throw Exception("Response body is null")
+        return body.bytes()
+    }
+    
+    private suspend fun downloadFromApi(invoiceId: String): ByteArray {
+        val token = prefs.getToken()
+        if (token == null) {
+            throw Exception("Authentication token not found")
+        }
+        
+        val client = okhttp3.OkHttpClient()
+        val request = okhttp3.Request.Builder()
+            .url("${com.smartinvoice.app.BuildConfig.API_BASE_URL}invoices/$invoiceId/pdf")
+            .addHeader("Authorization", "Bearer $token")
+            .build()
+        
+        val response = client.newCall(request).execute()
+        if (!response.isSuccessful) {
+            val errorBody = response.body?.string() ?: "Unknown error"
+            throw Exception("HTTP ${response.code}: $errorBody")
+        }
+        
+        val body = response.body ?: throw Exception("Response body is null")
+        return body.bytes()
+    }
+    
     private fun sharePdf(file: java.io.File) {
         try {
+            if (!file.exists() || file.length() == 0L) {
+                Toast.makeText(this, "PDF file is empty or not found", Toast.LENGTH_SHORT).show()
+                return
+            }
+            
             val uri = androidx.core.content.FileProvider.getUriForFile(
                 this,
                 "${packageName}.fileprovider",
                 file
             )
             
+            val invoiceNumber = invoice?.invoiceNumber ?: invoiceId ?: "Unknown"
+            val shareText = "Please find attached invoice $invoiceNumber"
+            
+            // Create main share intent
             val shareIntent = Intent(Intent.ACTION_SEND).apply {
                 type = "application/pdf"
                 putExtra(Intent.EXTRA_STREAM, uri)
-                putExtra(Intent.EXTRA_SUBJECT, "Invoice ${invoice?.invoiceNumber ?: invoiceId}")
-                putExtra(Intent.EXTRA_TEXT, "Please find attached invoice ${invoice?.invoiceNumber ?: invoiceId}")
+                putExtra(Intent.EXTRA_SUBJECT, "Invoice $invoiceNumber")
+                putExtra(Intent.EXTRA_TEXT, shareText)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
             
-            // Create chooser with specific options
+            // Create WhatsApp-specific intent
+            val whatsappIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "application/pdf"
+                setPackage("com.whatsapp")
+                putExtra(Intent.EXTRA_STREAM, uri)
+                putExtra(Intent.EXTRA_TEXT, shareText)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            
+            // Create email intent
+            val emailIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "application/pdf"
+                putExtra(Intent.EXTRA_EMAIL, arrayOf(""))
+                putExtra(Intent.EXTRA_SUBJECT, "Invoice $invoiceNumber")
+                putExtra(Intent.EXTRA_TEXT, shareText)
+                putExtra(Intent.EXTRA_STREAM, uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            
+            // Create chooser with WhatsApp and Email as priority options
             val chooserIntent = Intent.createChooser(shareIntent, "Share Invoice PDF").apply {
-                val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
-                    data = Uri.parse("mailto:")
-                    putExtra(Intent.EXTRA_SUBJECT, "Invoice ${invoice?.invoiceNumber ?: invoiceId}")
-                    putExtra(Intent.EXTRA_TEXT, "Please find attached invoice.")
-                    putExtra(Intent.EXTRA_STREAM, uri)
-                    type = "application/pdf"
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                // Add WhatsApp and Email as initial intents
+                val initialIntents = mutableListOf<Intent>()
+                
+                // Check if WhatsApp is installed
+                if (packageManager.resolveActivity(whatsappIntent, 0) != null) {
+                    initialIntents.add(whatsappIntent)
                 }
                 
-                val whatsappIntent = Intent(Intent.ACTION_SEND).apply {
-                    type = "application/pdf"
-                    setPackage("com.whatsapp")
-                    putExtra(Intent.EXTRA_STREAM, uri)
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                }
+                // Email is usually available
+                initialIntents.add(emailIntent)
                 
-                putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(emailIntent, whatsappIntent))
+                if (initialIntents.isNotEmpty()) {
+                    putExtra(Intent.EXTRA_INITIAL_INTENTS, initialIntents.toTypedArray())
+                }
             }
             
             startActivity(chooserIntent)
         } catch (e: Exception) {
             e.printStackTrace()
-            Toast.makeText(this, "Failed to share PDF: ${e.message}", Toast.LENGTH_SHORT).show()
+            val errorMsg = e.message ?: "Unknown error"
+            Toast.makeText(this, "Failed to share PDF: $errorMsg", Toast.LENGTH_LONG).show()
         }
+    }
+
+    private fun sendEmail() {
+        val id = invoiceId ?: return
+        val invoice = this.invoice
+        
+        if (invoice?.status != "FINAL" && invoice?.status != "APPROVED") {
+            Toast.makeText(this, "Can only send emails for approved invoices", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        // Create dialog to enter email address
+        val input = android.widget.EditText(this).apply {
+            inputType = android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
+            hint = getString(com.smartinvoice.app.R.string.enter_email_address)
+        }
+        
+        AlertDialog.Builder(this)
+            .setTitle(getString(com.smartinvoice.app.R.string.send_email_recipient))
+            .setMessage(getString(com.smartinvoice.app.R.string.enter_email_address))
+            .setView(input)
+            .setPositiveButton(getString(com.smartinvoice.app.R.string.send_email)) { _, _ ->
+                val emailAddress = input.text.toString().trim()
+                if (emailAddress.isEmpty()) {
+                    Toast.makeText(this, "Please enter an email address", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                
+                // Validate email format
+                if (!android.util.Patterns.EMAIL_ADDRESS.matcher(emailAddress).matches()) {
+                    Toast.makeText(this, "Please enter a valid email address", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                
+                lifecycleScope.launch {
+                    try {
+                        binding.progressBar.visibility = View.VISIBLE
+                        val response = apiService.sendInvoiceEmail(
+                            id,
+                            com.smartinvoice.app.data.remote.SendEmailRequest(to = emailAddress)
+                        )
+                        Toast.makeText(
+                            this@InvoiceDetailActivity,
+                            getString(com.smartinvoice.app.R.string.email_sent_successfully),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        Toast.makeText(
+                            this@InvoiceDetailActivity,
+                            "${getString(com.smartinvoice.app.R.string.failed_to_send_email)}: ${e.message}",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    } finally {
+                        binding.progressBar.visibility = View.GONE
+                    }
+                }
+            }
+            .setNegativeButton(getString(com.smartinvoice.app.R.string.cancel), null)
+            .show()
     }
 
     private fun addComment() {

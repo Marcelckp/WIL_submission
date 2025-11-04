@@ -225,6 +225,30 @@
                         android:minHeight="56dp" />
                 </com.google.android.material.textfield.TextInputLayout>
 
+                <!-- Customer Email -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/customer_email"
+                    app:boxStrokeWidth="0dp"
+                    app:boxBackgroundMode="filled"
+                    app:boxBackgroundColor="@color/input_background"
+                    android:layout_marginTop="@dimen/margin_small"
+                    android:layout_marginBottom="@dimen/margin_large">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/customerEmailEditText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textSize="@dimen/text_size_medium"
+                        android:paddingLeft="@dimen/padding_large"
+                        android:paddingRight="@dimen/padding_large"
+                        android:paddingTop="@dimen/padding_large"
+                        android:paddingBottom="@dimen/padding_large"
+                        android:minHeight="56dp"
+                        android:inputType="textEmailAddress" />
+                </com.google.android.material.textfield.TextInputLayout>
+
                 <!-- Project / Site -->
                 <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"

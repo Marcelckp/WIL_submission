@@ -8,12 +8,12 @@ datasource db {
 }
 
 model Company {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   name      String
   vatNumber String?
   address   String?
   logoUrl   String?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
   users     User[]
   boqs      Boq[]
   invoices  Invoice[]
@@ -22,7 +22,7 @@ model Company {
 model User {
   id           String    @id @default(cuid())
   companyId    String
-  role         String    // ADMIN or FIELD
+  role         String // ADMIN or FIELD
   name         String
   email        String    @unique
   passwordHash String
@@ -35,100 +35,106 @@ model User {
 }
 
 model Boq {
-  id        String    @id @default(cuid())
-  companyId String
-  name      String
-  version   Int
+  id         String    @id @default(cuid())
+  companyId  String
+  name       String
+  version    Int
   uploadedBy String
-  status    String    // ACTIVE or ARCHIVED
-  createdAt DateTime  @default(now())
-  company   Company   @relation(fields: [companyId], references: [id])
-  uploader  User      @relation(fields: [uploadedBy], references: [id])
-  items     BoqItem[]
+  status     String // ACTIVE or ARCHIVED
+  createdAt  DateTime  @default(now())
+  company    Company   @relation(fields: [companyId], references: [id])
+  uploader   User      @relation(fields: [uploadedBy], references: [id])
+  items      BoqItem[]
 }
 
 model BoqItem {
-  id              String  @id @default(cuid())
-  boqId           String
-  sapNumber       String
+  id               String  @id @default(cuid())
+  boqId            String
+  sapNumber        String
   shortDescription String
-  unit            String
-  rate            String  // decimal as string
-  category        String?
-  searchableText  String?
-  boq             Boq     @relation(fields: [boqId], references: [id], onDelete: Cascade)
-  
+  unit             String
+  rate             String // decimal as string
+  category         String?
+  searchableText   String?
+  boq              Boq     @relation(fields: [boqId], references: [id], onDelete: Cascade)
+
   @@index([boqId, sapNumber])
   @@index([boqId, searchableText])
 }
 
 model Invoice {
-  id                  String       @id @default(cuid())
-  companyId           String
-  invoiceNumber       String?      @unique
-  date                String
-  customerName        String
-  projectSite         String?
-  preparedBy          String?
-  subtotal            String?      // decimal as string
-  vatPercent          String?      // decimal as string
-  vatAmount           String?      // decimal as string
-  total               String?      // decimal as string
-  createdBy           String
-  status              String       // DRAFT, SUBMITTED, APPROVED, REJECTED, FINAL
-  approvedBy          String?
-  approvedAt          DateTime?
-  rejectionReason     String?
-  rejectedAt          DateTime?
-  rejectedBy          String?
-  serverPdfUrl        String?
-  clientPdfUrl        String?
+  id                   String        @id @default(cuid())
+  companyId            String
+  invoiceNumber        String?       @unique
+  date                 String
+  customerName         String
+  customerEmail        String?
+  projectSite          String?
+  preparedBy           String?
+  area                 String?
+  jobNo                String?
+  grn                  String?
+  po                   String?
+  address              String?
+  subtotal             String? // decimal as string
+  vatPercent           String? // decimal as string
+  vatAmount            String? // decimal as string
+  total                String? // decimal as string
+  createdBy            String
+  status               String // DRAFT, SUBMITTED, APPROVED, REJECTED, FINAL
+  approvedBy           String?
+  approvedAt           DateTime?
+  rejectionReason      String?
+  rejectedAt           DateTime?
+  rejectedBy           String?
+  serverPdfUrl         String?
+  clientPdfUrl         String?
   lastSyncedBoqVersion String?
   // Metadata snapshot - immutable after submission, contains invoice content summary
-  metadataSnapshot    String?      // JSON string with invoice content: lineItemCount, itemSummary, etc.
-  lineItemCount       Int?         // Number of line items in invoice
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
-  submittedAt         DateTime?     // Timestamp when invoice was submitted (becomes immutable)
-  company             Company       @relation(fields: [companyId], references: [id])
-  creator             User          @relation(fields: [createdBy], references: [id])
+  metadataSnapshot     String? // JSON string with invoice content: lineItemCount, itemSummary, etc.
+  lineItemCount        Int? // Number of line items in invoice
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  submittedAt          DateTime? // Timestamp when invoice was submitted (becomes immutable)
+  company              Company       @relation(fields: [companyId], references: [id])
+  creator              User          @relation(fields: [createdBy], references: [id])
   lines                InvoiceLine[]
   media                Media[]
   comments             Comment[]
-  
+
   @@index([companyId, status])
   @@index([companyId, invoiceNumber])
 }
 
 model InvoiceLine {
-  id          String   @id @default(cuid())
+  id          String  @id @default(cuid())
   invoiceId   String
   boqItemId   String?
   itemName    String
   description String?
   unit        String
-  unitPrice   String   // decimal as string
-  quantity    String   // decimal as string
-  amount      String   // decimal as string
-  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  
+  unitPrice   String // decimal as string
+  quantity    String // decimal as string
+  amount      String // decimal as string
+  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
   @@index([invoiceId])
 }
 
 model Media {
-  id             String   @id @default(cuid())
-  invoiceId      String
-  url            String
-  mimeType       String?
-  width          Int?
-  height         Int?
-  source         String?   // CAMERA or GALLERY
-  storageProvider String?  // AZURE_BLOB
-  blobContainer  String?
-  blobPath       String?
-  createdAt      DateTime  @default(now())
-  invoice        Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  
+  id              String   @id @default(cuid())
+  invoiceId       String
+  url             String
+  mimeType        String?
+  width           Int?
+  height          Int?
+  source          String? // CAMERA or GALLERY
+  storageProvider String? // AZURE_BLOB
+  blobContainer   String?
+  blobPath        String?
+  createdAt       DateTime @default(now())
+  invoice         Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
   @@index([invoiceId])
 }
 
@@ -137,10 +143,9 @@ model Comment {
   invoiceId String
   authorId  String
   body      String
-  createdAt DateTime  @default(now())
-  invoice   Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  author    User      @relation(fields: [authorId], references: [id])
-  
+  createdAt DateTime @default(now())
+  invoice   Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  author    User     @relation(fields: [authorId], references: [id])
+
   @@index([invoiceId])
 }
-

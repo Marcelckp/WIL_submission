@@ -2,6 +2,8 @@ package com.smartinvoice.app.ui
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
@@ -16,6 +18,10 @@ class InvoiceListActivity : AppCompatActivity() {
     private lateinit var apiService: ApiService
     private lateinit var prefs: SharedPreferencesHelper
     private lateinit var adapter: InvoiceListAdapter
+    
+    private val pollingHandler = Handler(Looper.getMainLooper())
+    private var pollingRunnable: Runnable? = null
+    private val POLLING_INTERVAL = 5_000L // 5 seconds
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,6 +33,7 @@ class InvoiceListActivity : AppCompatActivity() {
 
         setupViews()
         loadInvoices()
+        startPolling()
     }
 
     private fun setupViews() {
@@ -38,7 +45,7 @@ class InvoiceListActivity : AppCompatActivity() {
             adapter = InvoiceListAdapter { invoice ->
                 // Navigate to invoice detail
                 val intent = Intent(this@InvoiceListActivity, InvoiceDetailActivity::class.java)
-                intent.putExtra("invoice_id", invoice.id)
+                intent.putExtra("invoiceId", invoice.id)
                 startActivity(intent)
             }
 
@@ -47,8 +54,10 @@ class InvoiceListActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadInvoices() {
-        binding.progressBar.visibility = View.VISIBLE
+    private fun loadInvoices(showLoading: Boolean = true) {
+        if (showLoading) {
+            binding.progressBar.visibility = View.VISIBLE
+        }
 
         lifecycleScope.launch {
             try {
@@ -63,8 +72,27 @@ class InvoiceListActivity : AppCompatActivity() {
                 e.printStackTrace()
                 // Show error
             } finally {
-                binding.progressBar.visibility = View.GONE
+                if (showLoading) {
+                    binding.progressBar.visibility = View.GONE
+                }
             }
+        }
+    }
+    
+    private fun startPolling() {
+        pollingRunnable = object : Runnable {
+            override fun run() {
+                loadInvoices(showLoading = false) // Don't show loading spinner during polling
+                pollingHandler.postDelayed(this, POLLING_INTERVAL)
+            }
+        }
+        pollingHandler.post(pollingRunnable!!)
+    }
+    
+    override fun onDestroy() {
+        super.onDestroy()
+        pollingRunnable?.let {
+            pollingHandler.removeCallbacks(it)
         }
     }
 }

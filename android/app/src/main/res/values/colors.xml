@@ -38,6 +38,8 @@
     <color name="accent_green">#27AE60</color>
     <color name="accent_red">#E74C3C</color>
     <color name="accent_yellow">#F39C12</color>
+    <color name="text_red">#E74C3C</color>
+    <color name="background_red_light">#FFEBEE</color>
     
     <!-- Divider Colors -->
     <color name="divider">#E1E8ED</color>

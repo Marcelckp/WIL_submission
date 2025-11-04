@@ -12,7 +12,8 @@ import {
   deleteBlob,
   downloadBlob,
   streamBlob,
-} from "../services/azureBlob.js";
+} from "../services/firebaseStorage.js";
+import { sendInvoiceEmail } from "../services/email.js";
 import { generateInvoicePdf } from "../services/pdfGenerator.js";
 
 /**
@@ -72,8 +73,14 @@ const InvoiceLineSchema = z.object({
 const CreateInvoiceSchema = z.object({
   date: z.string(),
   customerName: z.string().min(1),
+  customerEmail: z.string().email().optional(),
   projectSite: z.string().optional(),
   preparedBy: z.string().optional(),
+  area: z.string().optional(),
+  jobNo: z.string().optional(),
+  grn: z.string().optional(),
+  po: z.string().optional(),
+  address: z.string().optional(),
   lines: z.array(InvoiceLineSchema).optional(),
 });
 
@@ -91,14 +98,31 @@ invoicesRouter.post("/", authenticateToken, async (req: AuthRequest, res) => {
   const companyId = req.user!.companyId;
 
   try {
+    // Generate invoice number for draft invoices
+    const year = new Date().getFullYear();
+    const count = await prisma.invoice.count({
+      where: {
+        companyId,
+        invoiceNumber: { startsWith: `INV-${year}-` },
+      },
+    });
+    const invoiceNumber = `INV-${year}-${String(count + 1).padStart(4, "0")}`;
+
     const invoice = await prisma.invoice.create({
       data: {
         companyId,
         date: data.date,
         customerName: data.customerName,
+        customerEmail: data.customerEmail,
         projectSite: data.projectSite,
         preparedBy: data.preparedBy,
+        area: data.area,
+        jobNo: data.jobNo,
+        grn: data.grn,
+        po: data.po,
+        address: data.address,
         status: "DRAFT",
+        invoiceNumber, // Assign invoice number on creation
         createdBy: userId,
         lines: data.lines
           ? {
@@ -151,6 +175,7 @@ invoicesRouter.get("/", authenticateToken, async (req: AuthRequest, res) => {
         invoiceNumber: true,
         date: true,
         customerName: true,
+        customerEmail: true,
         projectSite: true,
         preparedBy: true,
         status: true,
@@ -161,6 +186,15 @@ invoicesRouter.get("/", authenticateToken, async (req: AuthRequest, res) => {
         createdAt: true,
         updatedAt: true,
         createdBy: true,
+        lines: {
+          select: {
+            id: true,
+            itemName: true,
+            quantity: true,
+            unitPrice: true,
+            amount: true,
+          },
+        },
       },
     }),
     prisma.invoice.count({ where }),
@@ -180,15 +214,43 @@ invoicesRouter.get(
       select: {
         id: true,
         total: true,
+        subtotal: true,
+        vatPercent: true,
+        vatAmount: true,
         status: true,
         createdBy: true,
         customerName: true,
         invoiceNumber: true,
         createdAt: true,
+        lines: {
+          select: {
+            quantity: true,
+            unitPrice: true,
+            amount: true,
+          },
+        },
       },
     });
 
-    const parseAmount = (s?: string | null) => (s ? parseFloat(s) : 0);
+    const parseAmount = (inv: (typeof invoices)[0]): number => {
+      // If total exists, use it (already includes VAT)
+      if (inv.total) {
+        return parseFloat(inv.total);
+      }
+      // Otherwise calculate from line items and add VAT
+      const subtotal = inv.lines.reduce((sum, line) => {
+        const qty = parseFloat(line.quantity) || 0;
+        const price = parseFloat(line.unitPrice) || 0;
+        return sum + qty * price;
+      }, 0);
+
+      // Calculate VAT (default 15% if not specified)
+      const vatPercent = inv.vatPercent ? parseFloat(inv.vatPercent) : 15;
+      const vatAmount = subtotal * (vatPercent / 100);
+
+      // Return total including VAT
+      return subtotal + vatAmount;
+    };
 
     let totalRevenue = 0;
     let approvedRevenue = 0;
@@ -199,7 +261,7 @@ invoicesRouter.get(
     const amountByOperator: Record<string, number> = {};
 
     for (const inv of invoices) {
-      const amount = parseAmount(inv.total);
+      const amount = parseAmount(inv);
       totalRevenue += amount;
       if (inv.status === "FINAL" || inv.status === "APPROVED")
         approvedRevenue += amount;
@@ -268,6 +330,70 @@ invoicesRouter.get(
   }
 );
 
+// Email invoice PDF to recipient(s) - Available to both ADMIN and FIELD operators
+// Uses invoice.customerEmail if no 'to' is provided
+invoicesRouter.post(
+  "/:id/email",
+  authenticateToken,
+  async (req: AuthRequest, res) => {
+    const { id } = req.params;
+    const { to } = req.body || {};
+
+    const invoice = await prisma.invoice.findUnique({ where: { id } });
+    if (!invoice || invoice.companyId !== req.user!.companyId) {
+      return res.sendStatus(404);
+    }
+
+    // Only allow sending emails for approved/final invoices
+    if (invoice.status !== "FINAL" && invoice.status !== "APPROVED") {
+      return res.status(400).json({
+        error:
+          "Can only send emails for approved invoices. Invoice must be approved first.",
+      });
+    }
+
+    if (!invoice.serverPdfUrl || !invoice.invoiceNumber) {
+      return res.status(400).json({ error: "Invoice PDF not available yet" });
+    }
+
+    // Use invoice.customerEmail if no 'to' is provided, or prefer invoice.customerEmail
+    const recipientEmail = invoice.customerEmail || to;
+    if (!recipientEmail) {
+      return res.status(400).json({
+        error:
+          "No customer email address found on invoice. Please add customer email when creating the invoice.",
+      });
+    }
+
+    try {
+      const pdfFilename = invoice.invoiceNumber + ".pdf";
+      const blobContainer = "invoices";
+      const blobPath = `invoices/${invoice.companyId}/${pdfFilename}`;
+      const result = await sendInvoiceEmail({
+        to: Array.isArray(recipientEmail)
+          ? recipientEmail
+          : String(recipientEmail),
+        subject: `Invoice ${invoice.invoiceNumber}`,
+        htmlBody: `<p>Please find attached invoice <strong>${invoice.invoiceNumber}</strong>.</p>`,
+        pdfBlobContainer: blobContainer,
+        pdfBlobPath: blobPath,
+      });
+
+      if (result) {
+        res.json({ status: "sent", messageId: result.messageId });
+      } else {
+        res.status(503).json({ error: "Email service not configured" });
+      }
+    } catch (e) {
+      console.error("Manual invoice email send failed:", e);
+      res.status(500).json({
+        error: "Failed to send email",
+        details: e instanceof Error ? e.message : "Unknown error",
+      });
+    }
+  }
+);
+
 // Get invoice
 invoicesRouter.get("/:id", authenticateToken, async (req: AuthRequest, res) => {
   const invoice = await prisma.invoice.findUnique({
@@ -310,15 +436,55 @@ invoicesRouter.patch(
     }
 
     try {
+      const parsed = CreateInvoiceSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res
+          .status(400)
+          .json({ error: "Invalid request", details: parsed.error.issues });
+      }
+
+      const data = parsed.data;
+
+      // Delete existing lines and recreate them
+      await prisma.invoiceLine.deleteMany({
+        where: { invoiceId: req.params.id },
+      });
+
       const updated = await prisma.invoice.update({
         where: { id: req.params.id },
         data: {
-          date: req.body.date,
-          customerName: req.body.customerName,
-          projectSite: req.body.projectSite,
-          preparedBy: req.body.preparedBy,
+          date: data.date,
+          customerName: data.customerName,
+          customerEmail: data.customerEmail,
+          projectSite: data.projectSite,
+          preparedBy: data.preparedBy,
+          area: data.area,
+          jobNo: data.jobNo,
+          grn: data.grn,
+          po: data.po,
+          address: data.address,
+          lines: data.lines
+            ? {
+                create: data.lines.map((line) => ({
+                  itemName: line.itemName,
+                  description: line.description,
+                  unit: line.unit,
+                  unitPrice: line.unitPrice,
+                  quantity: line.quantity,
+                  amount:
+                    line.amount ||
+                    String(
+                      parseFloat(line.quantity) * parseFloat(line.unitPrice)
+                    ),
+                })),
+              }
+            : undefined,
+          // Clear rejection reason when invoice is edited
+          rejectionReason: null,
+          rejectedAt: null,
+          rejectedBy: null,
         },
-        include: { lines: true },
+        include: { lines: true, comments: { include: { author: true } } },
       });
 
       res.json(updated);
@@ -394,6 +560,10 @@ invoicesRouter.post(
           metadataSnapshot, // Store immutable snapshot
           lineItemCount: invoice.lines.length,
           submittedAt: new Date(), // Mark submission timestamp
+          // Clear rejection fields when resubmitting
+          rejectionReason: null,
+          rejectedAt: null,
+          rejectedBy: null,
         },
         include: { lines: true },
       });
@@ -408,7 +578,7 @@ invoicesRouter.post(
   }
 );
 
-// Approve invoice (ADMIN only) - generates PDF and uploads to Azure
+// Approve invoice (ADMIN only) - generates PDF and uploads to Firebase Storage
 // After approval, invoice exists only in PDF form and is completely independent of BOQ
 invoicesRouter.post(
   "/:id/approve",
@@ -474,7 +644,7 @@ invoicesRouter.post(
       // Generate PDF with all invoice data (PDF becomes the authoritative backup)
       const pdfBuffer = await generateInvoicePdf(invoice.id);
 
-      // Upload PDF to Azure Blob - this serves as the backup that can be re-sent to customers
+      // Upload PDF to Firebase Storage - this serves as the backup that can be re-sent to customers
       const pdfBlobName = `invoices/${invoice.companyId}/${invoiceNumber}.pdf`;
       const pdfUrl = await uploadBlob(
         "invoices",
@@ -510,13 +680,41 @@ invoicesRouter.post(
           total: total.toFixed(2),
           approvedBy: req.user!.id,
           approvedAt: new Date(),
-          serverPdfUrl: pdfUrl, // Azure PDF URL - backup for re-sending
+          serverPdfUrl: pdfUrl, // Firebase Storage PDF URL - backup for re-sending
           lastSyncedBoqVersion: null, // Ensure no BOQ version reference
           metadataSnapshot, // Final immutable snapshot
           lineItemCount: invoice.lines.length,
+          // Clear rejection fields when approving
+          rejectionReason: null,
+          rejectedAt: null,
+          rejectedBy: null,
         },
         include: { lines: true, comments: { include: { author: true } } },
       });
+
+      // Optionally auto-email on approval when env flag is set
+      if (process.env.SEND_EMAIL_ON_APPROVE === "true") {
+        // Try to use customer email, fallback to default email
+        const to =
+          invoice.customerEmail || process.env.DEFAULT_INVOICE_EMAIL_TO;
+        if (to) {
+          try {
+            const pdfFilename = invoiceNumber + ".pdf";
+            const blobContainer = "invoices";
+            const blobPath = `invoices/${invoice.companyId}/${pdfFilename}`;
+            await sendInvoiceEmail({
+              to,
+              subject: `Invoice ${invoiceNumber}`,
+              htmlBody: `<p>Please find attached invoice <strong>${invoiceNumber}</strong>.</p>`,
+              pdfBlobContainer: blobContainer,
+              pdfBlobPath: blobPath,
+            });
+          } catch (e) {
+            console.error("Auto email on approve failed:", e);
+            // Don't fail the approval if email fails
+          }
+        }
+      }
 
       res.json(updated);
     } catch (error) {
@@ -528,7 +726,7 @@ invoicesRouter.post(
   }
 );
 
-// Reject invoice (ADMIN only)
+// Reject invoice (ADMIN only) - Sets status back to DRAFT so operator can edit
 invoicesRouter.post(
   "/:id/reject",
   authenticateToken,
@@ -536,10 +734,17 @@ invoicesRouter.post(
   async (req: AuthRequest, res) => {
     const invoice = await prisma.invoice.findUnique({
       where: { id: req.params.id },
+      include: { lines: true },
     });
 
     if (!invoice || invoice.companyId !== req.user!.companyId) {
       return res.sendStatus(404);
+    }
+
+    if (invoice.status !== "SUBMITTED") {
+      return res
+        .status(409)
+        .json({ error: "Only SUBMITTED invoices can be rejected" });
     }
 
     const reason = String(req.body.reason || "").trim();
@@ -548,14 +753,20 @@ invoicesRouter.post(
     }
 
     try {
+      // Set status back to DRAFT so operator can edit the invoice
       const updated = await prisma.invoice.update({
         where: { id: req.params.id },
         data: {
-          status: "REJECTED",
+          status: "DRAFT",
           rejectionReason: reason,
           rejectedBy: req.user!.id,
           rejectedAt: new Date(),
+          // Clear totals so they can be recalculated after edits
+          subtotal: null,
+          vatAmount: null,
+          total: null,
         },
+        include: { lines: true, comments: { include: { author: true } } },
       });
 
       res.json(updated);
@@ -653,7 +864,7 @@ invoicesRouter.post(
     }
 
     try {
-      // Upload to Azure Blob
+      // Upload to Firebase Storage
       const blobName = `media/${invoice.companyId}/${
         invoice.id
       }/${Date.now()}-${req.file.originalname}`;
@@ -671,7 +882,7 @@ invoicesRouter.post(
           url,
           mimeType: req.file.mimetype,
           source: "GALLERY", // or detect from request
-          storageProvider: "AZURE_BLOB",
+          storageProvider: "FIREBASE_STORAGE",
           blobContainer: "media",
           blobPath: blobName,
         },
@@ -702,7 +913,7 @@ invoicesRouter.delete(
     }
 
     try {
-      // Delete from Azure Blob
+      // Delete from Firebase Storage
       if (media.blobContainer && media.blobPath) {
         await deleteBlob(media.blobContainer, media.blobPath);
       }
@@ -719,7 +930,7 @@ invoicesRouter.delete(
   }
 );
 
-// Get PDF - serves the PDF backup from Azure as downloadable file
+// Get PDF - serves the PDF backup from Firebase Storage as downloadable file
 // This allows re-sending the invoice PDF to customers
 invoicesRouter.get(
   "/:id/pdf",
@@ -751,7 +962,7 @@ invoicesRouter.get(
       const blobContainer = "invoices";
       const blobPath = `invoices/${invoice.companyId}/${pdfFilename}`;
 
-      // Stream PDF from Azure Blob Storage
+      // Stream PDF from Firebase Storage
       const pdfStream = await streamBlob(blobContainer, blobPath);
 
       // Set headers for PDF download

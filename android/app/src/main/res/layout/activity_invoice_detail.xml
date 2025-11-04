@@ -13,6 +13,50 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
+        <!-- App Bar -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:padding="@dimen/padding_medium"
+            android:background="@color/white"
+            android:elevation="4dp">
+
+            <ImageButton
+                android:id="@+id/backButton"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@android:drawable/ic_menu_revert"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Back" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginStart="@dimen/margin_medium">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/invoice_details"
+                    android:textSize="@dimen/text_size_xlarge"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary" />
+
+                <TextView
+                    android:id="@+id/invoiceNumberHeaderText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=""
+                    android:textSize="@dimen/text_size_small"
+                    android:textColor="@color/text_secondary"
+                    android:layout_marginTop="4dp" />
+            </LinearLayout>
+        </LinearLayout>
+
         <!-- Header Card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
@@ -68,8 +112,8 @@
                         android:text="DRAFT"
                         android:textSize="@dimen/text_size_small"
                         android:textStyle="bold"
-                        android:paddingHorizontal="@dimen/padding_medium"
-                        android:paddingVertical="@dimen/padding_small"
+                        android:paddingHorizontal="6dp"
+                        android:paddingVertical="3dp"
                         android:background="@drawable/status_badge_draft"
                         android:textColor="@color/text_white" />
                 </LinearLayout>
@@ -112,6 +156,20 @@
                     android:textColor="@color/text_grey"
                     android:layout_marginTop="@dimen/margin_small"
                     android:layout_marginBottom="@dimen/margin_small" />
+                    
+                <!-- Rejection Reason -->
+                <TextView
+                    android:id="@+id/rejectionReasonText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Rejection Feedback: "
+                    android:textSize="@dimen/text_size_medium"
+                    android:textColor="@color/text_red"
+                    android:textStyle="bold"
+                    android:background="@color/background_red_light"
+                    android:padding="@dimen/padding_medium"
+                    android:layout_marginTop="@dimen/margin_small"
+                    android:visibility="gone" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -427,6 +485,18 @@
                 android:layout_weight="1"
                 android:text="@string/view_pdf"
                 style="@style/Button.Secondary"
+                android:layout_marginStart="@dimen/margin_small"
+                android:layout_marginTop="@dimen/margin_small"
+                android:layout_marginBottom="@dimen/margin_small"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/sendEmailButton"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/button_height"
+                android:layout_weight="1"
+                android:text="@string/send_email"
+                style="@style/Button.Primary"
                 android:layout_marginStart="@dimen/margin_small"
                 android:layout_marginTop="@dimen/margin_small"
                 android:layout_marginBottom="@dimen/margin_small"

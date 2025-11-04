@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { apiClient } from "@/lib/api";
 
 interface MetricsResponse {
@@ -25,40 +25,123 @@ interface MetricsResponse {
 export default function DashboardPage() {
   const [metrics, setMetrics] = useState<MetricsResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const isInitialLoad = useRef(true);
 
-  useEffect(() => {
-    const run = async () => {
+  const fetchMetrics = useCallback(async (isPolling = false) => {
+    // Only show loading spinner on initial load, not during polling
+    if (!isPolling) {
       setLoading(true);
-      try {
-        const { data } = await apiClient.get("/invoices/metrics");
-        setMetrics(data);
-      } finally {
+    }
+    setError(null);
+    try {
+      const { data } = await apiClient.get("/invoices/metrics");
+
+      // Only update state if data actually changed (prevents unnecessary re-renders)
+      setMetrics((prevMetrics) => {
+        if (!prevMetrics) return data;
+
+        // Check if metrics changed
+        const totalsChanged =
+          prevMetrics.totals.totalRevenue !== data.totals.totalRevenue ||
+          prevMetrics.totals.approvedRevenue !== data.totals.approvedRevenue ||
+          prevMetrics.totals.draftPendingRevenue !==
+            data.totals.draftPendingRevenue ||
+          prevMetrics.totals.totalCount !== data.totals.totalCount;
+
+        const largestChanged =
+          prevMetrics.largestInvoice?.id !== data.largestInvoice?.id ||
+          prevMetrics.largestInvoice?.total !== data.largestInvoice?.total;
+
+        if (totalsChanged || largestChanged) {
+          return data;
+        }
+        return prevMetrics;
+      });
+    } catch (error: any) {
+      console.error("Failed to load metrics:", error);
+      if (error.response?.status === 403) {
+        setError(
+          "Access denied. Please check your authentication token and try logging in again."
+        );
+      } else if (error.response?.status === 401) {
+        setError("Authentication required. Please log in.");
+      } else {
+        setError("Failed to load dashboard metrics. Please try again.");
+      }
+    } finally {
+      if (!isPolling) {
         setLoading(false);
       }
-    };
-    run();
+      isInitialLoad.current = false;
+    }
   }, []);
+
+  useEffect(() => {
+    isInitialLoad.current = true;
+    fetchMetrics(false);
+  }, [fetchMetrics]);
+
+  // Poll for updates every 5 seconds (silently, without loading state)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!isInitialLoad.current) {
+        fetchMetrics(true); // Pass true to indicate this is polling
+      }
+    }, 5000); // 5 seconds
+
+    return () => clearInterval(interval);
+  }, [fetchMetrics]);
+
+  if (loading) {
+    return (
+      <div className="px-4 py-6 sm:px-0">
+        <div className="bg-white shadow rounded-lg p-6">
+          <div className="text-center text-gray-500">Loading metrics...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="px-4 py-6 sm:px-0">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+          <div className="text-red-800">{error}</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="px-4 py-6 sm:px-0">
       <div className="grid grid-cols-1 gap-6">
         {/* KPI cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white p-6 rounded-lg shadow">
+          <div className="bg-white p-6 rounded-lg shadow min-h-[100px] flex flex-col justify-center">
             <div className="text-sm text-gray-500">Total revenue</div>
-            <div className="text-2xl font-bold">
+            <div
+              className="text-2xl font-bold truncate"
+              title={metrics?.totals.totalRevenue.toFixed(2) ?? "0.00"}
+            >
               R{metrics?.totals.totalRevenue.toFixed(2) ?? "0.00"}
             </div>
           </div>
-          <div className="bg-white p-6 rounded-lg shadow">
+          <div className="bg-white p-6 rounded-lg shadow min-h-[100px] flex flex-col justify-center">
             <div className="text-sm text-gray-500">Approved revenue</div>
-            <div className="text-2xl font-bold">
+            <div
+              className="text-2xl font-bold truncate"
+              title={metrics?.totals.approvedRevenue.toFixed(2) ?? "0.00"}
+            >
               R{metrics?.totals.approvedRevenue.toFixed(2) ?? "0.00"}
             </div>
           </div>
-          <div className="bg-white p-6 rounded-lg shadow">
+          <div className="bg-white p-6 rounded-lg shadow min-h-[100px] flex flex-col justify-center">
             <div className="text-sm text-gray-500">Draft/Pending revenue</div>
-            <div className="text-2xl font-bold">
+            <div
+              className="text-2xl font-bold truncate"
+              title={metrics?.totals.draftPendingRevenue.toFixed(2) ?? "0.00"}
+            >
               R{metrics?.totals.draftPendingRevenue.toFixed(2) ?? "0.00"}
             </div>
           </div>
