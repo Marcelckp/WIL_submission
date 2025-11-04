@@ -25,6 +25,12 @@ EMAIL_FROM="onboarding@resend.dev"  # or your verified domain email
 # Optional: auto-send invoice emails on approval
 SEND_EMAIL_ON_APPROVE=true
 DEFAULT_INVOICE_EMAIL_TO="customer@example.com"
+
+# Email Override (for testing with Resend API limitations)
+# When set, ALL emails will be sent to this address instead of the intended recipient
+# Remove or leave empty to disable override and send to actual recipients
+# This is useful when testing with Resend API which only allows sending to verified email addresses
+EMAIL_OVERRIDE_TO="marcelpal9999@gmail.com"
 ```
 
 ## Web (`web/.env.local`)

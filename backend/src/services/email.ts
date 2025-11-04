@@ -4,6 +4,10 @@ import { downloadBlob } from "./firebaseStorage.js";
 const resendApiKey = process.env.RESEND_API_KEY;
 const fromEmail = process.env.EMAIL_FROM || process.env.RESEND_FROM_EMAIL;
 
+// Email override for testing - set EMAIL_OVERRIDE_TO to override all recipient emails
+// Set to empty string or remove to disable override
+const emailOverrideTo = process.env.DEFAULT_INVOICE_EMAIL_TO || "";
+
 // More detailed warning message
 if (!resendApiKey || !fromEmail) {
   const missing: string[] = [];
@@ -13,6 +17,16 @@ if (!resendApiKey || !fromEmail) {
   console.warn(
     `Email service not fully configured. Missing: ${missing.join(", ")}. ` +
       `Please set these in your .env file.`
+  );
+}
+
+// Log override status
+if (emailOverrideTo) {
+  console.log(
+    `[EMAIL OVERRIDE] All emails will be sent to: ${emailOverrideTo}`
+  );
+  console.log(
+    `[EMAIL OVERRIDE] To disable, remove EMAIL_OVERRIDE_TO from .env`
   );
 }
 
@@ -30,7 +44,17 @@ export async function sendInvoiceEmail(options: {
     return null;
   }
 
-  const toList = Array.isArray(options.to) ? options.to : [options.to];
+  // Override recipient email if EMAIL_OVERRIDE_TO is set
+  let toList: string[];
+  if (emailOverrideTo && emailOverrideTo.trim() !== "") {
+    const originalTo = Array.isArray(options.to) ? options.to : [options.to];
+    console.log(
+      `[EMAIL OVERRIDE] Overriding recipient(s) ${originalTo.join(", ")} -> ${emailOverrideTo}`
+    );
+    toList = [emailOverrideTo.trim()];
+  } else {
+    toList = Array.isArray(options.to) ? options.to : [options.to];
+  }
 
   let attachments:
     | Array<{

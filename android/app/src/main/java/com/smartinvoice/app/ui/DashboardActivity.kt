@@ -8,6 +8,7 @@ import android.view.View
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.PopupMenu
+import androidx.core.util.Pair
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.snackbar.Snackbar
@@ -146,10 +147,32 @@ class DashboardActivity : AppCompatActivity() {
             rangePickerButton.setOnClickListener {
                 val picker = MaterialDatePicker.Builder.dateRangePicker()
                     .setTitleText("Select date range")
+                    .setSelection(
+                        Pair(
+                            startDateMillis ?: MaterialDatePicker.todayInUtcMilliseconds(),
+                            endDateMillis ?: MaterialDatePicker.todayInUtcMilliseconds()
+                        )
+                    )
                     .build()
                 picker.addOnPositiveButtonClickListener { range ->
-                    startDateMillis = range.first
-                    endDateMillis = range.second
+                    // Set start date to beginning of day (00:00:00)
+                    val startCal = Calendar.getInstance()
+                    startCal.timeInMillis = range.first
+                    startCal.set(Calendar.HOUR_OF_DAY, 0)
+                    startCal.set(Calendar.MINUTE, 0)
+                    startCal.set(Calendar.SECOND, 0)
+                    startCal.set(Calendar.MILLISECOND, 0)
+                    startDateMillis = startCal.timeInMillis
+                    
+                    // Set end date to end of day (23:59:59.999)
+                    val endCal = Calendar.getInstance()
+                    endCal.timeInMillis = range.second
+                    endCal.set(Calendar.HOUR_OF_DAY, 23)
+                    endCal.set(Calendar.MINUTE, 59)
+                    endCal.set(Calendar.SECOND, 59)
+                    endCal.set(Calendar.MILLISECOND, 999)
+                    endDateMillis = endCal.timeInMillis
+                    
                     if (startDateMillis != null && endDateMillis != null) {
                         periodPrefs.edit().putLong("start", startDateMillis!!).putLong("end", endDateMillis!!).apply()
                     }
@@ -273,10 +296,24 @@ class DashboardActivity : AppCompatActivity() {
             val filtered = if (start != null && end != null) {
                 invoices.filter { invoice ->
                     try {
-                        val d = sdf.parse(invoice.date.substring(0, minOf(10, invoice.date.length))) ?: return@filter false
-                        val time = d.time
-                        time in start..end
-                    } catch (e: Exception) { false }
+                        // Parse the invoice date (format: yyyy-MM-dd or yyyy-MM-ddTHH:mm:ss...)
+                        val dateStr = invoice.date.substring(0, minOf(10, invoice.date.length))
+                        val parsedDate = sdf.parse(dateStr) ?: return@filter false
+                        
+                        // Create calendar instances for comparison
+                        val invoiceCal = Calendar.getInstance()
+                        invoiceCal.time = parsedDate
+                        invoiceCal.set(Calendar.HOUR_OF_DAY, 0)
+                        invoiceCal.set(Calendar.MINUTE, 0)
+                        invoiceCal.set(Calendar.SECOND, 0)
+                        invoiceCal.set(Calendar.MILLISECOND, 0)
+                        val invoiceTime = invoiceCal.timeInMillis
+                        
+                        // Check if invoice date falls within the selected range (inclusive)
+                        invoiceTime >= start && invoiceTime <= end
+                    } catch (e: Exception) { 
+                        false 
+                    }
                 }
             } else invoices
 
