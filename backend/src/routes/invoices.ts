@@ -720,28 +720,30 @@ invoicesRouter.post(
         include: { lines: true, comments: { include: { author: true } } },
       });
 
-      // Optionally auto-email on approval when env flag is set
-      if (process.env.SEND_EMAIL_ON_APPROVE === "true") {
-        // Try to use customer email, fallback to default email
-        const to =
-          invoice.customerEmail || process.env.DEFAULT_INVOICE_EMAIL_TO;
-        if (to) {
-          try {
-            const pdfFilename = invoiceNumber + ".pdf";
-            const blobContainer = "invoices";
-            const blobPath = `invoices/${invoice.companyId}/${pdfFilename}`;
-            await sendInvoiceEmail({
-              to,
-              subject: `Invoice ${invoiceNumber}`,
-              htmlBody: `<p>Please find attached invoice <strong>${invoiceNumber}</strong>.</p>`,
-              pdfBlobContainer: blobContainer,
-              pdfBlobPath: blobPath,
-            });
-          } catch (e) {
-            console.error("Auto email on approve failed:", e);
-            // Don't fail the approval if email fails
-          }
+      // Auto-email invoice to customer when approved (moves to FINAL state)
+      if (invoice.customerEmail) {
+        try {
+          const pdfFilename = invoiceNumber + ".pdf";
+          const blobContainer = "invoices";
+          const blobPath = `invoices/${invoice.companyId}/${pdfFilename}`;
+          await sendInvoiceEmail({
+            to: invoice.customerEmail,
+            subject: `Invoice ${invoiceNumber}`,
+            htmlBody: `<p>Please find attached invoice <strong>${invoiceNumber}</strong>.</p>`,
+            pdfBlobContainer: blobContainer,
+            pdfBlobPath: blobPath,
+          });
+          console.log(
+            `Invoice ${invoiceNumber} automatically emailed to ${invoice.customerEmail}`
+          );
+        } catch (e) {
+          console.error("Auto email on approve failed:", e);
+          // Don't fail the approval if email fails - email can be sent manually later
         }
+      } else {
+        console.warn(
+          `Invoice ${invoiceNumber} approved but no customer email found - email not sent`
+        );
       }
 
       res.json(updated);

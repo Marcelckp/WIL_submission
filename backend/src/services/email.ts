@@ -6,7 +6,9 @@ const fromEmail = process.env.EMAIL_FROM || process.env.RESEND_FROM_EMAIL;
 
 // Email override for testing - set EMAIL_OVERRIDE_TO to override all recipient emails
 // Set to empty string or remove to disable override
-const emailOverrideTo = process.env.DEFAULT_INVOICE_EMAIL_TO || "";
+const emailOverrideTo = String(
+  process.env.EMAIL_OVERRIDE_TO || process.env.DEFAULT_INVOICE_EMAIL_TO || ""
+).trim();
 
 // More detailed warning message
 if (!resendApiKey || !fromEmail) {
@@ -46,12 +48,12 @@ export async function sendInvoiceEmail(options: {
 
   // Override recipient email if EMAIL_OVERRIDE_TO is set
   let toList: string[];
-  if (emailOverrideTo && emailOverrideTo.trim() !== "") {
+  if (emailOverrideTo && emailOverrideTo.length > 0) {
     const originalTo = Array.isArray(options.to) ? options.to : [options.to];
     console.log(
       `[EMAIL OVERRIDE] Overriding recipient(s) ${originalTo.join(", ")} -> ${emailOverrideTo}`
     );
-    toList = [emailOverrideTo.trim()];
+    toList = [emailOverrideTo];
   } else {
     toList = Array.isArray(options.to) ? options.to : [options.to];
   }
@@ -81,6 +83,11 @@ export async function sendInvoiceEmail(options: {
       ];
     } catch (e) {
       console.error("Failed to download PDF for email attachment:", e);
+      // Continue sending email without attachment if PDF download fails
+      // This prevents the entire email from failing due to storage issues
+      console.warn(
+        "Email will be sent without PDF attachment due to download failure"
+      );
     }
   }
 

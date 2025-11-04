@@ -177,13 +177,32 @@ export async function generateInvoicePdf(invoiceId: string): Promise<Buffer> {
   const vatAmount = subtotal * (vatPercent / 100);
   const total = subtotal + vatAmount;
 
-  doc.font("Helvetica-Bold");
-  doc.text(`SUB-TOTAL R ${subtotal.toFixed(2)}`, { align: "right", width: 150 });
-  doc.text(`VAT R ${vatAmount.toFixed(2)}`, { align: "right", width: 150 });
-  doc.fontSize(12);
-  doc.text(`TOTAL R ${total.toFixed(2)}`, { align: "right", width: 150 });
+  // Align totals with Amount column
+  // Amount column: X = 500, width = 50, right-aligned
+  // Put labels on the left, amounts aligned with Amount column
+  const labelX = 400; // Start position for labels
+  const amountX = amountStartX; // Same X as Amount column (500)
+  const amountWidth = 50; // Same width as Amount column
 
-  doc.moveDown(2.5);
+  doc.font("Helvetica-Bold");
+  doc.fontSize(10);
+  const totalsY = doc.y;
+  
+  // SUB-TOTAL
+  doc.text("SUB-TOTAL", labelX, totalsY);
+  doc.text(`R ${subtotal.toFixed(2)}`, amountX, totalsY, { width: amountWidth, align: "right" });
+  
+  // VAT
+  doc.text(`VAT (${vatPercent}%)`, labelX, totalsY + 18);
+  doc.text(`R ${vatAmount.toFixed(2)}`, amountX, totalsY + 18, { width: amountWidth, align: "right" });
+  
+  // TOTAL
+  doc.fontSize(12);
+  doc.text("TOTAL", labelX, totalsY + 36);
+  doc.text(`R ${total.toFixed(2)}`, amountX, totalsY + 36, { width: amountWidth, align: "right" });
+  
+  doc.y = totalsY + 54;
+  doc.moveDown(2);
 
   // Banking details
   if (invoice.company.address) {
