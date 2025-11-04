@@ -45,6 +45,7 @@ class NewInvoiceActivity : AppCompatActivity() {
     private val invoiceItems: MutableList<InvoiceLineItem> = mutableListOf()
     private val photoUris: MutableList<Uri> = mutableListOf()
     private val boqItems: MutableList<BoqItemResponse> = mutableListOf()
+    private var selectedBoqItem: BoqItemResponse? = null
     
     private val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     private val apiDateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
@@ -173,9 +174,23 @@ class NewInvoiceActivity : AppCompatActivity() {
         binding.boqItemAutoComplete.setAdapter(adapter)
 
         binding.boqItemAutoComplete.setOnItemClickListener { _, _, position, _ ->
-            val selectedItem = adapter.getItem(position)
-            // Item selected, ready to add with quantity
+            val item = adapter.getItem(position)
+            selectedBoqItem = item
+            val label = "${item.sapNumber} - ${item.shortDescription} (${item.unit}) - R${item.rate}"
+            binding.boqItemAutoComplete.setText(label, false)
         }
+        
+        // Clear selection when user starts typing
+        binding.boqItemAutoComplete.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                // Clear selected item if user is typing (not selecting from dropdown)
+                if (before == 0 && count > 0) {
+                    selectedBoqItem = null
+                }
+            }
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        })
     }
 
     private fun loadBoqItems() {
@@ -202,17 +217,9 @@ class NewInvoiceActivity : AppCompatActivity() {
     }
 
     private fun addItem() {
-        val selectedText = binding.boqItemAutoComplete.text.toString().trim()
-        if (selectedText.isEmpty()) {
+        val currentItem = selectedBoqItem
+        if (currentItem == null) {
             binding.boqItemAutoComplete.error = "Please select an item from BOQ"
-            return
-        }
-
-        // Find selected BOQ item
-        val selectedItem = boqItems.find { item ->
-            "${item.sapNumber} - ${item.shortDescription} (${item.unit}) - R${item.rate}" == selectedText
-        } ?: run {
-            binding.boqItemAutoComplete.error = "Selected item not found"
             return
         }
 
@@ -224,11 +231,11 @@ class NewInvoiceActivity : AppCompatActivity() {
             return
         }
 
-        val unitPrice = selectedItem.rate.toDoubleOrNull() ?: 0.0
+        val unitPrice = currentItem.rate.toDoubleOrNull() ?: 0.0
         val total = quantity * unitPrice
 
         val invoiceLine = InvoiceLineItem(
-            boqItem = selectedItem,
+            boqItem = currentItem,
             quantity = quantity,
             unitPrice = unitPrice,
             total = total
@@ -239,6 +246,7 @@ class NewInvoiceActivity : AppCompatActivity() {
 
         // Reset fields
         binding.boqItemAutoComplete.text?.clear()
+        selectedBoqItem = null
         binding.quantityEditText.setText("0")
         binding.quantityEditText.clearFocus()
 

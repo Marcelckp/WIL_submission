@@ -3,6 +3,8 @@ package com.smartinvoice.app.ui
 import android.content.Context
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import android.widget.Filter
+import android.widget.Filterable
 import com.smartinvoice.app.data.remote.models.BoqItemResponse
 
 class BoqAutocompleteAdapter(
@@ -10,13 +12,15 @@ class BoqAutocompleteAdapter(
     resource: Int,
     private val items: List<BoqItemResponse>,
     private val displayText: (BoqItemResponse) -> String
-) : ArrayAdapter<BoqItemResponse>(context, resource, items) {
+) : ArrayAdapter<BoqItemResponse>(context, resource, items), Filterable {
+
+    private var filteredItems: List<BoqItemResponse> = items
 
     override fun getItem(position: Int): BoqItemResponse {
-        return items[position]
+        return filteredItems[position]
     }
 
-    override fun getCount(): Int = items.size
+    override fun getCount(): Int = filteredItems.size
 
     override fun getItemId(position: Int): Long = position.toLong()
 
@@ -26,8 +30,8 @@ class BoqAutocompleteAdapter(
         return view
     }
 
-    override fun getFilter(): android.widget.Filter {
-        return object : android.widget.Filter() {
+    override fun getFilter(): Filter {
+        return object : Filter() {
             override fun performFiltering(constraint: CharSequence?): FilterResults {
                 val results = FilterResults()
                 val filtered = if (constraint.isNullOrBlank()) {
@@ -37,7 +41,8 @@ class BoqAutocompleteAdapter(
                     items.filter { item ->
                         item.sapNumber.lowercase().contains(filterPattern) ||
                         item.shortDescription.lowercase().contains(filterPattern) ||
-                        item.category?.lowercase()?.contains(filterPattern) == true
+                        item.category?.lowercase()?.contains(filterPattern) == true ||
+                        item.unit.lowercase().contains(filterPattern)
                     }
                 }
                 results.values = filtered
@@ -45,10 +50,16 @@ class BoqAutocompleteAdapter(
                 return results
             }
 
+            @Suppress("UNCHECKED_CAST")
             override fun publishResults(constraint: CharSequence?, results: FilterResults?) {
-                notifyDataSetChanged()
+                if (results != null && results.count > 0) {
+                    filteredItems = results.values as List<BoqItemResponse>
+                    notifyDataSetChanged()
+                } else {
+                    filteredItems = emptyList()
+                    notifyDataSetInvalidated()
+                }
             }
         }
     }
 }
-

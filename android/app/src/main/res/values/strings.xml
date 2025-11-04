@@ -36,6 +36,7 @@
     <string name="attachments">Attachments</string>
     <string name="add_item">Add Item</string>
     <string name="select_from_boq">Select from BOQ</string>
+    <string name="type_to_search_boq">Type to search BOQ items…</string>
     <string name="quantity">Quantity</string>
     <string name="upload_photos">Upload Photos</string>
     <string name="preview">Preview</string>

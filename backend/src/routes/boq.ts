@@ -174,7 +174,7 @@ boqRouter.get("/active/items", authenticateToken, async (req: AuthRequest, res) 
   }
 
   const q = String(req.query.q ?? "").toLowerCase();
-  const limit = Math.min(Number(req.query.limit ?? 20), 100);
+  const limit = Math.min(Number(req.query.limit ?? 20), 1000);
 
   let items = activeBoq.items;
   if (q) {

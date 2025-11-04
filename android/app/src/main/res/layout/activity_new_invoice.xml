@@ -399,9 +399,14 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:textSize="@dimen/text_size_medium"
-                        android:padding="@dimen/padding_medium"
-                        android:minHeight="48dp"
-                        android:completionThreshold="1" />
+                        android:paddingLeft="@dimen/padding_large"
+                        android:paddingRight="@dimen/padding_large"
+                        android:paddingTop="@dimen/padding_large"
+                        android:paddingBottom="@dimen/padding_large"
+                        android:minHeight="56dp"
+                        android:inputType="text"
+                        android:completionThreshold="1"
+                        android:hint="@string/type_to_search_boq" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <!-- Quantity Input -->
