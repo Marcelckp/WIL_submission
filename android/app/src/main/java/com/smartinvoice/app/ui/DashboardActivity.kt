@@ -216,8 +216,26 @@ class DashboardActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
+                // Ensure we're using the latest token by recreating the API service
+                apiService = com.smartinvoice.app.data.remote.ApiClient.create(this@DashboardActivity)
+                
                 val response = apiService.getInvoices()
-                updateDashboardStatistics(response.invoices, isPolling = !showLoading)
+                
+                // Double-check that we're only showing invoices for the current user
+                val currentUserId = prefs.getUserId()
+                val filteredInvoices = if (currentUserId != null) {
+                    // Filter invoices client-side as an extra safety measure
+                    // This ensures we only show invoices created by the current user
+                    // Backend should already filter, but this adds an extra layer of protection
+                    response.invoices.filter { 
+                        it.createdBy != null && it.createdBy == currentUserId 
+                    }
+                } else {
+                    // If no user ID, show empty list to prevent showing wrong user's data
+                    emptyList()
+                }
+                
+                updateDashboardStatistics(filteredInvoices, isPolling = !showLoading)
             } catch (e: Exception) {
                 e.printStackTrace()
                 // Show error or use default values

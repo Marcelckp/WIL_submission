@@ -45,6 +45,7 @@ data class InvoiceResponse(
     val serverPdfUrl: String?,
     val createdAt: String,
     val updatedAt: String,
+    val createdBy: String?,
     val lines: List<InvoiceLineResponse>?,
     val comments: List<CommentResponse>? = null,
     val media: List<MediaResponse>? = null
