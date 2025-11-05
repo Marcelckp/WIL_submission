@@ -675,6 +675,18 @@ This opens Prisma Studio at http://localhost:5555
 
 MIT
 
+## Contributors & Work Distribution
+
+This project was developed collaboratively by the following team members:
+
+Name  : Omphile Hlongwane (ST10026037)-	Led documentation writing, contributed to presentation content and delivery, managed Scrum board setup & task tracking, assisted with requirements analysis and testing
+
+Name: Gculisa Kolobe	(ST10058639)-	Co-led documentation and presentation development, maintained and organized Scrum board, provided UI/UX input, supported project coordination, testing, and quality assurance
+
+Name: Marcel Palmer	(ST10265652)-	Led application development (front-end & back-end), configured database and implemented core logic, handled integration and debugging, ensured application functionality
+
+All members actively participated in planning, agile ceremonies, and project reviews to ensure successful completion.
+
 ## Support
 
 For issues and questions:
