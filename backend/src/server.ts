@@ -9,8 +9,20 @@ import { usersRouter } from "./routes/users.js";
 export const app = express();
 
 // CORS middleware
+// In production, set ALLOWED_ORIGINS environment variable (comma-separated)
+// Example: ALLOWED_ORIGINS=https://your-app.vercel.app,https://another-domain.com
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(",").map((origin) => origin.trim())
+  : ["*"]; // Allow all in development
+
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
+  const origin = req.headers.origin;
+  if (
+    allowedOrigins.includes("*") ||
+    (origin && allowedOrigins.includes(origin))
+  ) {
+    res.header("Access-Control-Allow-Origin", origin || "*");
+  }
   res.header(
     "Access-Control-Allow-Methods",
     "GET, POST, PUT, PATCH, DELETE, OPTIONS"
@@ -19,6 +31,7 @@ app.use((req, res, next) => {
     "Access-Control-Allow-Headers",
     "Origin, X-Requested-With, Content-Type, Accept, Authorization"
   );
+  res.header("Access-Control-Allow-Credentials", "true");
   if (req.method === "OPTIONS") {
     res.sendStatus(200);
   } else {
@@ -38,8 +51,9 @@ app.get("/api/health", (_req, res) => {
 });
 
 const port = process.env.PORT ? Number(process.env.PORT) : 3000;
+
 if (process.env.NODE_ENV !== "test") {
-  app.listen(port, () => {
-    console.log(`Smart Invoice API listening on http://localhost:${port}`);
+  app.listen(port, "0.0.0.0", () => {
+    console.log(`Smart Invoice API listening on http://0.0.0.0:${port}`);
   });
 }

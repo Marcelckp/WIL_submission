@@ -9,6 +9,11 @@ configurations.all {
     exclude(group = "android.support")
 }
 
+// Read API URL from gradle.properties or environment variable
+val apiBaseUrl = project.findProperty("API_BASE_URL") as String?
+    ?: System.getenv("API_BASE_URL")
+    ?: "https://wilsubmission-production.up.railway.app/api/"
+
 android {
     namespace = "com.smartinvoice.app"
     compileSdk = 34
@@ -22,8 +27,9 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         
-        // API base URL
-        buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:3000/api/\"")
+        // API base URL - reads from gradle.properties or environment variable
+        // Defaults to Railway production backend
+        buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
     }
 
     buildTypes {
@@ -33,6 +39,14 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // Production API URL (uses same value from gradle.properties)
+            buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
+        }
+        debug {
+            // Uses API_BASE_URL from gradle.properties or environment variable
+            // For local development, update gradle.properties:
+            // API_BASE_URL=http://10.0.2.2:3000/api/
+            buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
         }
     }
     

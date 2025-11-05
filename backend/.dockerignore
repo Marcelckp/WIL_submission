@@ -1,0 +1,15 @@
+# Docker ignore file - exclude unnecessary files from Docker build
+node_modules
+npm-debug.log
+.env
+.env.local
+.env.*.local
+dist
+.git
+.gitignore
+*.md
+.vscode
+.idea
+*.log
+coverage
+.DS_Store

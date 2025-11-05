@@ -103,7 +103,17 @@ class LoginActivity : AppCompatActivity() {
                     binding.progressBar.visibility = View.GONE
                 }
             } catch (e: Exception) {
-                Toast.makeText(this@LoginActivity, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+                e.printStackTrace()
+                val errorMessage = when {
+                    e is java.net.UnknownHostException -> "Cannot reach server. Check your internet connection."
+                    e is java.net.SocketTimeoutException -> "Connection timeout. The server may be slow or unreachable."
+                    e is java.net.ConnectException -> "Connection failed. Check if the backend is running."
+                    e.message?.contains("Unable to resolve host") == true -> "DNS resolution failed. Check your network."
+                    e.message?.contains("SSL") == true -> "SSL certificate error. Check server configuration."
+                    else -> "Error: ${e.message ?: "Unknown error occurred"}"
+                }
+                android.util.Log.e("LoginActivity", "Login error: ${e.javaClass.simpleName}", e)
+                Toast.makeText(this@LoginActivity, errorMessage, Toast.LENGTH_LONG).show()
                 binding.signInButton.isEnabled = true
                 binding.progressBar.visibility = View.GONE
             }

@@ -1,0 +1,15 @@
+# Netlify configuration for Next.js with App Router
+[build]
+  # Build command
+  command = "npm run build"
+  # Next.js plugin handles output directory automatically
+  publish = ".next"
+
+# Next.js plugin for Netlify (REQUIRED - install in Netlify Dashboard)
+# This plugin handles SSR, dynamic routes, and API routes
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Environment variables (set in Netlify dashboard)
+# NEXT_PUBLIC_API_BASE_URL=https://wilsubmission-production.up.railway.app/api
+

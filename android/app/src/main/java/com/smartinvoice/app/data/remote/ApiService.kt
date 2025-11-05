@@ -88,15 +88,30 @@ data class SendEmailResponse(
 
 class AuthInterceptor(private val tokenProvider: () -> String?) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): okhttp3.Response {
+        val request = chain.request()
+        val url = request.url.toString()
+        android.util.Log.d("AuthInterceptor", "Making request to: $url")
+        
         val token = tokenProvider()
-        val request = chain.request().newBuilder()
+        val newRequest = request.newBuilder()
             .apply {
                 token?.let {
                     addHeader("Authorization", "Bearer $it")
+                    android.util.Log.d("AuthInterceptor", "Added Authorization header")
+                } ?: run {
+                    android.util.Log.d("AuthInterceptor", "No token available")
                 }
             }
             .build()
-        return chain.proceed(request)
+        
+        try {
+            val response = chain.proceed(newRequest)
+            android.util.Log.d("AuthInterceptor", "Response code: ${response.code}")
+            return response
+        } catch (e: Exception) {
+            android.util.Log.e("AuthInterceptor", "Request failed: ${e.javaClass.simpleName}", e)
+            throw e
+        }
     }
 }
 
@@ -113,17 +128,25 @@ object ApiClient {
             level = if (BuildConfig.DEBUG) {
                 HttpLoggingInterceptor.Level.BODY
             } else {
-                HttpLoggingInterceptor.Level.NONE
+                HttpLoggingInterceptor.Level.BASIC
             }
         }
 
+        // Add timeout configurations for better reliability
         val client = OkHttpClient.Builder()
+            .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+            .writeTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
             .addInterceptor(logging)
             .addInterceptor(AuthInterceptor(tokenProvider))
             .build()
 
+        // Use BuildConfig for URL, but log it for debugging
+        val baseUrl = BuildConfig.API_BASE_URL
+        android.util.Log.d("ApiClient", "Using API Base URL: $baseUrl")
+
         return Retrofit.Builder()
-            .baseUrl(BuildConfig.API_BASE_URL)
+            .baseUrl(baseUrl)
             .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
