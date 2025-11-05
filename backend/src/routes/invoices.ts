@@ -369,14 +369,24 @@ invoicesRouter.post(
       return res.status(400).json({ error: "Invoice PDF not available yet" });
     }
 
-    // Use invoice.customerEmail if no 'to' is provided, or prefer invoice.customerEmail
-    const recipientEmail = invoice.customerEmail || to;
+    // Use 'to' parameter if provided, otherwise fall back to invoice.customerEmail
+    const recipientEmail = to || invoice.customerEmail;
     if (!recipientEmail) {
       return res.status(400).json({
         error:
-          "No customer email address found on invoice. Please add customer email when creating the invoice.",
+          "No customer email address found. Please provide 'to' parameter in request body or set customerEmail on invoice.",
       });
     }
+
+    // Log the email details for debugging
+    console.log(
+      `[EMAIL SEND] Invoice ${invoice.invoiceNumber} (${invoice.id})`
+    );
+    console.log(
+      `[EMAIL SEND] Invoice customerEmail: ${invoice.customerEmail || "(null)"}`
+    );
+    console.log(`[EMAIL SEND] Request body 'to': ${to || "(not provided)"}`);
+    console.log(`[EMAIL SEND] Final recipient: ${recipientEmail}`);
 
     try {
       const pdfFilename = invoice.invoiceNumber + ".pdf";
@@ -432,6 +442,7 @@ invoicesRouter.get("/:id", authenticateToken, async (req: AuthRequest, res) => {
 });
 
 // Update invoice (only DRAFT - immutable after submission)
+// Exception: customerEmail can be updated for FINAL invoices (for email delivery purposes)
 invoicesRouter.patch(
   "/:id",
   authenticateToken,
@@ -449,16 +460,46 @@ invoicesRouter.patch(
       return res.sendStatus(403);
     }
 
-    // Invoice becomes immutable once submitted
-    if (invoice.status !== "DRAFT") {
+    // Special case: Allow updating only customerEmail for FINAL invoices (for email delivery)
+    const onlyCustomerEmailUpdate =
+      invoice.status !== "DRAFT" &&
+      req.body &&
+      Object.keys(req.body).length === 1 &&
+      req.body.customerEmail !== undefined;
+
+    // Invoice becomes immutable once submitted (except for customerEmail updates)
+    if (invoice.status !== "DRAFT" && !onlyCustomerEmailUpdate) {
       return res.status(409).json({
         error:
-          "Invoice cannot be edited after submission. Only DRAFT invoices can be modified.",
+          "Invoice cannot be edited after submission. Only DRAFT invoices can be modified. Exception: customerEmail can be updated for FINAL invoices.",
         status: invoice.status,
       });
     }
 
     try {
+      // Special handling for customerEmail-only updates on FINAL invoices
+      if (onlyCustomerEmailUpdate) {
+        // Validate email format
+        const emailSchema = z.string().email();
+        const emailValidation = emailSchema.safeParse(req.body.customerEmail);
+        if (!emailValidation.success) {
+          return res.status(400).json({
+            error: "Invalid email format",
+            details: emailValidation.error.issues,
+          });
+        }
+
+        const updated = await prisma.invoice.update({
+          where: { id: req.params.id },
+          data: {
+            customerEmail: emailValidation.data,
+          },
+        });
+
+        return res.json(updated);
+      }
+
+      // Full update for DRAFT invoices
       const parsed = CreateInvoiceSchema.safeParse(req.body);
       if (!parsed.success) {
         return res

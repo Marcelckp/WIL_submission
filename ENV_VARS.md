@@ -18,18 +18,13 @@ FIREBASE_SERVICE_ACCOUNT_KEY='{"type":"service_account","project_id":"your-proje
 # Your Firebase Storage bucket name (e.g., "your-project.appspot.com")
 FIREBASE_STORAGE_BUCKET="your-project-id.appspot.com"
 
-# Email Configuration (Resend API)
-RESEND_API_KEY="re_your_api_key_here"
-EMAIL_FROM="onboarding@resend.dev"  # or your verified domain email
+# Email Configuration (SendGrid API)
+SENDGRID_API_KEY="SG.your_api_key_here"
+EMAIL_FROM="dev.marcel.developer@gmail.com"  # Must be verified in SendGrid first
 
-# Optional: auto-send invoice emails on approval
-SEND_EMAIL_ON_APPROVE=true
-DEFAULT_INVOICE_EMAIL_TO="customer@example.com"
-
-# Email Override (for testing with Resend API limitations)
+# Email Override (for testing only)
 # When set, ALL emails will be sent to this address instead of the intended recipient
 # Remove or leave empty to disable override and send to actual recipients
-# This is useful when testing with Resend API which only allows sending to verified email addresses
 EMAIL_OVERRIDE_TO="marcelpal9999@gmail.com"
 ```
 

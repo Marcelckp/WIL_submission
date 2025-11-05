@@ -1,19 +1,22 @@
-import { Resend } from "resend";
+import sgMail from "@sendgrid/mail";
 import { downloadBlob } from "./firebaseStorage.js";
 
-const resendApiKey = process.env.RESEND_API_KEY;
-const fromEmail = process.env.EMAIL_FROM || process.env.RESEND_FROM_EMAIL;
+const sendgridApiKey = process.env.SENDGRID_API_KEY;
+const fromEmail = process.env.EMAIL_FROM || process.env.SENDGRID_FROM_EMAIL;
 
 // Email override for testing - set EMAIL_OVERRIDE_TO to override all recipient emails
 // Set to empty string or remove to disable override
-const emailOverrideTo = String(
-  process.env.EMAIL_OVERRIDE_TO || process.env.DEFAULT_INVOICE_EMAIL_TO || ""
-).trim();
+const emailOverrideTo = String(process.env.EMAIL_OVERRIDE_TO || "").trim();
+
+// Initialize SendGrid
+if (sendgridApiKey) {
+  sgMail.setApiKey(sendgridApiKey);
+}
 
 // More detailed warning message
-if (!resendApiKey || !fromEmail) {
+if (!sendgridApiKey || !fromEmail) {
   const missing: string[] = [];
-  if (!resendApiKey) missing.push("RESEND_API_KEY");
+  if (!sendgridApiKey) missing.push("SENDGRID_API_KEY");
   if (!fromEmail) missing.push("EMAIL_FROM");
 
   console.warn(
@@ -27,12 +30,10 @@ if (emailOverrideTo) {
   console.log(
     `[EMAIL OVERRIDE] All emails will be sent to: ${emailOverrideTo}`
   );
-  console.log(
-    `[EMAIL OVERRIDE] To disable, remove EMAIL_OVERRIDE_TO from .env`
+  console.warn(
+    `[EMAIL OVERRIDE] Email override is ACTIVE. Remove EMAIL_OVERRIDE_TO from .env to send to actual customers.`
   );
 }
-
-const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
 export async function sendInvoiceEmail(options: {
   to: string | string[];
@@ -41,28 +42,56 @@ export async function sendInvoiceEmail(options: {
   pdfBlobContainer?: string;
   pdfBlobPath?: string;
 }): Promise<{ messageId?: string } | null> {
-  if (!resend || !fromEmail) {
-    console.warn("Email skipped: Resend not configured");
+  if (!sendgridApiKey || !fromEmail) {
+    console.warn("Email skipped: SendGrid not configured");
     return null;
   }
 
-  // Override recipient email if EMAIL_OVERRIDE_TO is set
+  // Get original recipient(s) before any override
+  const originalToList = Array.isArray(options.to) ? options.to : [options.to];
+
+  // Use the recipient email(s) provided - no override by default
+  // EMAIL_OVERRIDE_TO can be set for testing, but should be removed for production
   let toList: string[];
   if (emailOverrideTo && emailOverrideTo.length > 0) {
-    const originalTo = Array.isArray(options.to) ? options.to : [options.to];
     console.log(
-      `[EMAIL OVERRIDE] Overriding recipient(s) ${originalTo.join(", ")} -> ${emailOverrideTo}`
+      `[EMAIL OVERRIDE] Original recipient(s): ${originalToList.join(", ")}`
+    );
+    console.log(`[EMAIL OVERRIDE] Overriding to: ${emailOverrideTo}`);
+    console.warn(
+      `[EMAIL OVERRIDE] Email override is ACTIVE. Remove EMAIL_OVERRIDE_TO from .env to send to actual customers.`
     );
     toList = [emailOverrideTo];
   } else {
-    toList = Array.isArray(options.to) ? options.to : [options.to];
+    toList = originalToList;
+  }
+
+  // Safety check: Prevent sending to the same email as the sender
+  // This usually indicates a configuration error (wrong customer email or override set incorrectly)
+  const senderEmailLower = fromEmail.toLowerCase().trim();
+  const recipientEmailsLower = toList.map((email) =>
+    email.toLowerCase().trim()
+  );
+
+  if (recipientEmailsLower.includes(senderEmailLower)) {
+    const errorMsg =
+      `Cannot send invoice email to sender address (${senderEmailLower}). ` +
+      `Recipient email matches sender email. ` +
+      `Please check: 1) invoice.customerEmail is set correctly, 2) EMAIL_OVERRIDE_TO is not set to sender email.`;
+    console.error(`[EMAIL ERROR] ${errorMsg}`);
+    console.error(
+      `[EMAIL ERROR] Original recipient: ${originalToList.join(", ")}`
+    );
+    console.error(`[EMAIL ERROR] Final recipient: ${toList.join(", ")}`);
+    console.error(`[EMAIL ERROR] Sender: ${fromEmail}`);
+    throw new Error(errorMsg);
   }
 
   let attachments:
     | Array<{
         filename: string;
-        content: Buffer | string;
-        contentType?: string;
+        content: string;
+        type?: string;
       }>
     | undefined = undefined;
 
@@ -72,13 +101,13 @@ export async function sendInvoiceEmail(options: {
         options.pdfBlobContainer,
         options.pdfBlobPath
       );
-      // Resend expects base64 encoded content for attachments
+      // SendGrid expects base64 encoded content for attachments
       const base64Content = buffer.toString("base64");
       attachments = [
         {
           filename: options.pdfBlobPath.split("/").pop() || "invoice.pdf",
           content: base64Content,
-          contentType: "application/pdf",
+          type: "application/pdf",
         },
       ];
     } catch (e) {
@@ -92,40 +121,33 @@ export async function sendInvoiceEmail(options: {
   }
 
   try {
-    const emailPayload: {
-      from: string;
-      to: string[];
-      subject: string;
-      html: string;
-      attachments?: Array<{
-        filename: string;
-        content: string;
-      }>;
-    } = {
+    console.log(`[EMAIL] Sender: ${fromEmail}`);
+    console.log(`[EMAIL] Recipient(s): ${toList.join(", ")}`);
+    console.log(`[EMAIL] Subject: ${options.subject}`);
+
+    const msg = {
       from: fromEmail,
       to: toList,
       subject: options.subject,
       html: options.htmlBody,
+      attachments: attachments,
     };
 
-    // Add attachments if available
-    if (attachments && attachments.length > 0) {
-      emailPayload.attachments = attachments.map((att) => ({
-        filename: att.filename,
-        content: att.content as string, // Already base64 encoded
-      }));
+    const [response] = await sgMail.send(msg);
+
+    console.log(
+      `[EMAIL] Email sent successfully. Message ID: ${response.headers["x-message-id"]}`
+    );
+    return { messageId: response.headers["x-message-id"] };
+  } catch (error: any) {
+    console.error("SendGrid API error:", error);
+    if (error.response) {
+      console.error("Error status:", error.response.statusCode);
+      console.error(
+        "Error details:",
+        JSON.stringify(error.response.body, null, 2)
+      );
     }
-
-    const { data, error } = await resend.emails.send(emailPayload);
-
-    if (error) {
-      console.error("Resend API error:", error);
-      throw new Error(error.message || "Failed to send email");
-    }
-
-    return { messageId: data?.id };
-  } catch (error) {
-    console.error("Email send failed:", error);
-    throw error;
+    throw new Error(error.message || "Failed to send email");
   }
 }

@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@prisma/client": "^5.19.1",
+    "@sendgrid/mail": "^8.1.6",
     "bcryptjs": "^2.4.3",
     "dotenv": "^17.2.3",
     "exceljs": "^4.4.0",
