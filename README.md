@@ -1,418 +1,687 @@
-## Smart Invoice Capture – Project Plan and Reference
-
-This document captures the agreed plan, architecture, formats, and UX for building an automatic invoice generator used by field operators, with a Node.js server and an admin web portal that manages Bills of Quantities (BOQ). Keep this document as the single source of truth for future tasks and questions.
-
----
-
-### 1. Goals
-
-- Enable field operators (mobile) to create invoices quickly by searching an approved BOQ and autofilling unit and rate.
-- Allow admin/office (web) to upload, validate, and manage BOQs via Excel, and review/export invoices.
-- Generate professional PDF tax invoices and store images captured in the field.
-- Provide clear validation errors when a spreadsheet is malformed and instructions to fix it.
-
----
-
-### 2. High-Level Architecture
-
-- Client Apps
-  - Android mobile app built with Android Studio (Kotlin), using Room (SQLite) for a local BOQ cache and offline invoice drafts.
-  - Web Admin portal (React/Next.js recommended) used by office to upload/validate BOQs, review/approve invoices, and export PDFs.
-- Backend Server (Node.js)
-  - Express with TypeScript and Zod for validation.
-  - Prisma ORM.
-  - Database: SQLite for local/dev; Postgres in prod.
-  - File storage: Local disk in dev; Azure Blob Storage in prod for invoice PDFs and images (backup/archival).
-  - PDF generation: PDFKit (server) for authoritative copy; Android app can also generate a client-side PDF for preview/sharing after approval.
-  - Authentication: Email/password with JWT. Roles: ADMIN, FIELD.
-  - Concurrency/immutability: once an invoice is approved, it is locked from editing; any change requires a new revision.
-
----
-
-### 3. Data Model (initial)
-
-- Company
-  - id, name, vatNumber, address, logoUrl, createdAt
-- User
-  - id, companyId (FK), role: ADMIN|FIELD, name, email, passwordHash, active, createdAt
-- Boq
-  - id, companyId (FK), name, version, uploadedBy (FK User), status: ACTIVE|ARCHIVED, createdAt
-- BoqItem
-  - id, boqId (FK), sapNumber (string), shortDescription, unit (string), rate (decimal), category (optional), searchableText
-- Invoice
-  - id, companyId (FK), invoiceNumber (string unique per company), date, customerName, projectSite, preparedBy, subtotal, vatPercent, vatAmount, total, createdBy (FK User), status: DRAFT|SUBMITTED|APPROVED|REJECTED|FINAL, approvedBy (FK User nullable), approvedAt (nullable), rejectionReason (nullable), rejectedAt (nullable), rejectedBy (FK User nullable), serverPdfUrl (nullable), clientPdfUrl (nullable), lastSyncedBoqVersion (nullable)
-- InvoiceLine
-  - id, invoiceId (FK), boqItemId (nullable), itemName, description (optional), unit, unitPrice (decimal), quantity (decimal), amount (decimal)
-- Media
-
-  - id, invoiceId (FK), url, mimeType, width, height, source: CAMERA|GALLERY, storageProvider: AZURE_BLOB, blobContainer, blobPath, createdAt
-
-- Comment
-  - id, invoiceId (FK), authorId (FK User), body, createdAt
-
-Notes
-
-- `InvoiceLine` stores a denormalized snapshot of unit, unitPrice, and description for historical consistency even if BOQ changes later.
-- Numeric fields use DECIMAL in DB and string in JSON to avoid float rounding in transit.
-  - `lastSyncedBoqVersion` saves the BOQ version visible to the device when the draft was created; used for the offline disclaimer.
-
----
-
-### 4. Excel BOQ Format and Validation
-
-Accepted workbook
-
-- One worksheet named `BOQ` (case-insensitive allowed). Admin UI lets the user choose the sheet if multiple exist.
-
-Required header row (exact, case-insensitive)
-
-- Column A: `SAP #`
-- Column B: `SHORT DESCRIPTION`
-- Column C: `RATE`
-- Column D: `UNIT`
-
-Allowed optional columns
-
-- `CATEGORY` (E) – grouped reporting
-
-Row rules
-
-- Data starts on row 2; no merged cells in the data region.
-- `SAP #`: text or number, trimmed, must be unique within the file.
-- `SHORT DESCRIPTION`: non-empty text.
-- `RATE`: decimal using either comma or dot as decimal separator. We normalize to dot.
-- `UNIT`: non-empty short string (e.g., M, M2, M3, EA, HR).
-
-Validation feedback examples
-
-- Missing sheet or wrong header → “Could not find the required columns: SAP #, SHORT DESCRIPTION, RATE, UNIT. Ensure they appear in row 1.”
-- Non-numeric `RATE` → “Row 37: RATE must be a number. Found ‘ABC’.”
-- Duplicate `SAP #` → “Duplicate SAP # ‘650’ at rows 120 and 187. Make each SAP # unique.”
-- Empty mandatory field → “Row 22: SHORT DESCRIPTION is required.”
-
-Import behavior
-
-- Entire file is parsed and validated; failures block import and list all issues.
-- On success, a new `Boq` version is created with its `BoqItem`s. Admin can mark a version ACTIVE; only one ACTIVE per company.
-
----
-
-### 5. REST API (Node.js) – Outline
-
-Auth
-
-- POST /api/auth/login – returns JWT; role in claims
-
-Companies/Settings
-
-- GET /api/company – current company profile
-- PATCH /api/company – update VAT, address, logo
-
-BOQ Management
-
-- POST /api/boq/upload – multipart (xlsx). Validates; on success creates new version, returns validation report and counts
-- GET /api/boq – list versions
-- PATCH /api/boq/:id/activate – set ACTIVE
-- GET /api/boq/active/items – search items: `?q=term&limit=20`
-
-Invoices
-
-- POST /api/invoices – create draft (header + optional lines)
-- GET /api/invoices/:id – fetch invoice with lines and media
-- PATCH /api/invoices/:id – update header/lines (only when DRAFT)
-- POST /api/invoices/:id/submit – move to SUBMITTED for office review
-- POST /api/invoices/:id/approve – ADMIN only; lock totals, allocate invoice number, render authoritative PDF, upload to Azure Blob, set `serverPdfUrl`, move to APPROVED then FINAL
-- POST /api/invoices/:id/reject – ADMIN only; add comment, move to REJECTED
-- POST /api/invoices/:id/reject – ADMIN only; body: `{ reason: string }`; overwrites `rejectionReason`, moves to REJECTED, and sets `rejectedAt`/`rejectedBy`
-- POST /api/invoices/:id/media – multipart upload image; returns URL
-  - Server streams file to Azure Blob Storage, persists a `Media` row linked to the invoice, and returns `{ mediaId, url }`.
-- DELETE /api/invoices/:id/media/:mediaId – remove media
-- POST /api/invoices/:id/pdf-preview – optional: return server-rendered preview PDF (DRAFT)
-- GET /api/invoices/:id/updates?since=timestamp – polling endpoint returning status and new comments/media refs
-  - Designed for 10s polling intervals by both mobile and web; supports long-poll friendly caching headers
-- GET /api/invoices/:id/pdf – stream/redirect to authoritative PDF (APPROVED/FINAL). Returns signed URL or application/pdf bytes
-- GET /api/invoices – filter by date/customer/status with pagination
-
-Utilities
-
-- GET /api/health – readiness/liveness
-
-Request/Response contracts will use Zod schemas. Monetary fields as strings; server uses Decimal.js.
-
----
-
-### 6. Mobile App – Key Screens and Behavior (Android Native)
-
-Home
-
-- Header: “Smart Invoice Capture”; actions: New Invoice, View Saved
-- List recent invoices with status and totals
-
-New Invoice
-
-- Header inputs: invoice date (default: today), customer, project/site, prepared by
-- Item section: Add row → item name autocomplete querying local SQLite BOQ cache (Room); autofill unit and unit price; user enters quantity; line amount auto-calculates; totals update live
-- Offline banner: “Rates reflect BOQ version v{X} as at {timestamp}. Final invoice rates may update after sync.”
-- Photo section: Take/Upload; show thumbnails, remove option
-- Buttons: Save (draft), Submit for Approval (uploads draft to server), Back Home
-
-Preview
-
-- Clean summary with company info, customer, items, totals, VAT
-- Buttons: Generate PDF (device) after APPROVED, Share via WhatsApp/Email using Android Sharesheet; Edit only when DRAFT/REJECTED
-
-Invoice PDF Viewer (Android)
-
-- After APPROVED, the app fetches the authoritative PDF via `GET /api/invoices/:id/pdf` and displays it in-app using an embedded PDF viewer component.
-- If the endpoint returns a signed URL, the viewer streams the file directly; otherwise, it downloads bytes and renders from local cache.
-- Users can share or email from the viewer screen.
-
-Offline
-
-- BOQ table fully cached (active version) in SQLite with `lastSyncedAt` and `version` fields
-- Drafts cached locally; queued sync when online
-- Background polling every ~10s for status/comments via `/updates?since=` endpoint on both Android app and Web UI; exponential backoff when offline
-
----
-
-### 7. Web Admin Portal – Key Screens
-
-Dashboard
-
-- Stats: Active BOQ, invoices this month, pending drafts
-
-BOQ Upload/Manage
-
-- Upload xlsx → server validates and shows a problems list with exact row/column hints and fix instructions
-- Version table with Activate/Archive
-
-Invoices
-
-- Filter/search; open any invoice; view media; comment thread; Approve/Reject
-- Approve triggers server-side PDF render and upload to Azure Blob; invoice becomes immutable
-
-Settings
-
-- Company profile, VAT percentage, logo upload, users management
-
----
-
-### 8. PDF Invoice Template
-
-- Layout mirrors the provided “TAX-INVOICE” sample but modernized: company header with logo and VAT No., client + project block, table of items with Qty, Unit, Rate, Amount, subtotals, VAT, total, and banking details at bottom.
-- A4 portrait; fonts: Inter or Roboto; currency: `R` prefix.
-- Optional page for embedded thumbnails of evidence photos.
-- Two sources: authoritative server PDF (used for archival and email backup) and client PDF (Android) for quick sharing post-approval.
-
----
-
-### 9. Numbering, Taxes, and Currency
-
-- Invoice numbering per company: `INV-YYYY-####` allocated on finalize to avoid gaps.
-- VAT percent stored in company settings; applied on finalize; both `vatAmount` and `total` persisted.
-- Currency formatting server-side; locale `en-ZA`.
-
-Immutability and approvals
-
-- Status flow: DRAFT → SUBMITTED → APPROVED (→ FINAL) or REJECTED.
-- After APPROVED/FINAL, server prevents edits; new changes require a new invoice.
-- Server keeps authoritative PDF in Azure Blob; URL is returned as `serverPdfUrl`.
-
----
-
-### 10. Security and Access
-
-- JWT auth; HTTP-only cookies on web, bearer token on mobile.
-- Role-based guards: FIELD cannot manage BOQs or company settings; ADMIN can do everything.
-- File uploads scanned for type/size; max image 10MB; only `image/jpeg`, `image/png`.
-
----
-
-### 11. Implementation Roadmap (phases)
-
-1. Initialize monorepo, Node server with Express + TypeScript, Prisma, SQLite; scaffolding and CI.
-2. BOQ upload + validation + search endpoints; admin UI for upload and versioning.
-3. Android app foundation (Kotlin): Room DB schema for BOQ + drafts; data layer; New Invoice screen.
-4. Workflow: submit/approve/reject, comments, polling endpoint; server PDF generation and Azure Blob upload; lock on approval.
-5. Sharing: Android PDF generation post-approval and system Sharesheet (WhatsApp/Email); email via Intent; optional server-side email.
-6. Authentication with roles; company settings.
-7. Deployment (Docker), Azure Blob config, backups, and monitoring.
-
----
-
-### 12. Example BOQ Snippet (normalized)
-
-| SAP # | SHORT DESCRIPTION                             | RATE   | UNIT |
-| ----- | --------------------------------------------- | ------ | ---- |
-| 10    | Soil dig, backfill, compact hand pickable     | 126.63 | M3   |
-| 20    | Soil machine excavate dig, backfill, complete | 143.35 | M3   |
-| 80    | Tar paving cut & remove                       | 252.79 | M2   |
-
-Excel may contain comma decimals; the importer converts to dot and validates.
-
----
-
-### 13. Nice-to-Haves (later)
-
-- Customer directory and per-customer pricing overrides.
-- Multiple BOQ catalogs by project with effective dates.
-- GPS tagging on photos; map in admin.
-- Digital signatures on PDF.
-
----
-
-### 14. Dev Notes
-
-- Use Decimal.js for all monetary math.
-- Use background jobs (BullMQ) for heavy PDF/image processing if needed.
-- Keep BOQ search fast with `searchableText` column and DB indices on `(boqId, sapNumber, searchableText)`.
-- Android: use WorkManager for background sync/polling; Room for SQLite; Coroutine + Flow for reactive updates.
-- Polling cadence tuned to battery/network constraints (default 60s, backoff to 5m when offline).
-
----
-
-### 15. DevOps Pipeline and Continuous Integration
-
-#### 15.1. Pipeline Overview
-
-Our CI/CD pipeline is designed to ensure **rapid deployment of high-quality application software** by automating quality gates, security scanning, and deployment processes. Every code change triggers automated tests, quality checks, and security scans before any deployment.
-
-#### 15.2. GitHub Actions Workflows
-
-We use separate GitHub Actions workflows under `.github/workflows`:
-
-- **`web-ci.yml`** – builds the web UI (`web/`) with Node 20; runs lint/typecheck/build, SonarQube analysis, and Snyk security scan.
-- **`backend-ci.yml`** – builds the Express TypeScript server (`backend/`); generates Prisma client if present; runs lint/typecheck/build/tests, SonarQube analysis, and Snyk security scan.
-- **`android-ci.yml`** – builds the Android app (`android/`) using JDK 17 and Gradle (`assembleDebug`); runs SonarQube analysis and Snyk security scan.
-- **`play-store-release.yml`** – triggered on GitHub releases; builds signed APK and publishes to Google Play Store automatically.
-
-#### 15.3. Quality Gates
-
-1. **Code Quality (SonarQube)**: Automated code analysis for code smells, bugs, vulnerabilities, and technical debt.
-2. **Security Scanning (Snyk)**: Dependency vulnerability scanning and license compliance checks.
-3. **Build Verification**: Ensures all components compile without errors.
-4. **Test Execution**: Automated test suites run before deployment.
-
-#### 15.4. Pipeline Flow Diagram
+# Smart Invoice Capture
+
+A comprehensive invoice management system designed for field operators and office administrators. The application enables rapid invoice creation from Bills of Quantities (BOQ), automatic validation, approval workflows, and professional PDF generation.
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Features](#features)
+- [Architecture](#architecture)
+- [Prerequisites](#prerequisites)
+- [Quick Start](#quick-start)
+- [Installation](#installation)
+- [Running the Application](#running-the-application)
+- [Environment Variables](#environment-variables)
+- [Project Structure](#project-structure)
+- [API Documentation](#api-documentation)
+- [Testing](#testing)
+- [Deployment](#deployment)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+
+## Overview
+
+Smart Invoice Capture is a full-stack application consisting of three main components:
+
+1. **Backend API** - Express.js/TypeScript server with Prisma ORM
+2. **Web Admin Portal** - Next.js React application for office administrators
+3. **Android Mobile App** - Native Android app for field operators
+
+The system streamlines invoice creation by allowing field operators to search BOQ items, automatically populate rates and units, capture photos, and submit invoices for approval. Administrators can upload BOQ files, validate invoices, and generate professional PDF tax invoices.
+
+## Features
+
+### Field Operator (Mobile App)
+
+- ✅ Search BOQ items with autocomplete
+- ✅ Create invoices offline with local caching
+- ✅ Capture and attach photos
+- ✅ Submit invoices for approval
+- ✅ View invoice status and comments
+- ✅ Generate and share PDF invoices
+
+### Admin Portal (Web)
+
+- ✅ Upload and validate BOQ Excel files
+- ✅ Manage BOQ versions and activate versions
+- ✅ Review and approve/reject invoices
+- ✅ Add comments and feedback
+- ✅ View invoice metrics and reports
+- ✅ Manage company settings and users
+
+### Backend
+
+- ✅ RESTful API with JWT authentication
+- ✅ Excel BOQ validation and parsing
+- ✅ PDF invoice generation
+- ✅ File storage (Firebase Storage/Azure Blob)
+- ✅ Email notifications
+- ✅ Role-based access control (ADMIN, FIELD)
+
+## Architecture
 
 ```
-┌─────────────────┐
-│  Code Push/PR   │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────────────────────┐
-│  Trigger GitHub Actions         │
-│  (Path-filtered triggers)        │
-└────────┬────────────────────────┘
-         │
-         ├──► Web CI ──────────────┐
-         │    ├─ Build             │
-         │    ├─ Lint/Typecheck     │
-         │    ├─ SonarQube Scan    │
-         │    └─ Snyk Security      │
-         │                          │
-         ├──► Backend CI ───────────┤
-         │    ├─ Build             │
-         │    ├─ Prisma Generate   │
-         │    ├─ Tests             │
-         │    ├─ SonarQube Scan    │
-         │    └─ Snyk Security      │
-         │                          │
-         └──► Android CI ───────────┤
-              ├─ Gradle Build      │
-              ├─ SonarQube Scan    │
-              └─ Snyk Security     │
-                                    │
-                                    ▼
-┌───────────────────────────────────────┐
-│  Quality Gates Pass?                   │
-│  ┌─────────────────────────────┐      │
-│  │ ✓ Build Success             │      │
-│  │ ✓ SonarQube Quality Gate    │      │
-│  │ ✓ Snyk Security Pass         │      │
-│  │ ✓ Tests Pass                │      │
-│  └─────────────────────────────┘      │
-└────────┬──────────────────────────────┘
-         │
-         ├─ NO ──► Block & Report Issues
-         │
-         ▼ YES
-┌─────────────────────────────────┐
-│  Merge to Main / Create Release │
-└────────┬───────────────────────┘
-         │
-         ▼
-┌─────────────────────────────────────┐
-│  GitHub Release Created?             │
-└────────┬───────────────────────────┘
-         │
-         ▼ YES
-┌─────────────────────────────────────┐
-│  Play Store Release Workflow        │
-│  ├─ Build Signed APK               │
-│  ├─ Upload to Play Store           │
-│  └─ Version Update                 │
-└─────────────────────────────────────┘
+┌─────────────────┐         ┌─────────────────┐         ┌─────────────────┐
+│   Android App   │         │   Web Portal    │         │   Backend API   │
+│   (Kotlin)      │────────▶│   (Next.js)     │────────▶│   (Express)    │
+│                 │         │                 │         │                 │
+│  - Room DB      │         │  - React        │         │  - Prisma ORM   │
+│  - Offline Sync │         │  - TailwindCSS  │         │  - SQLite/Postgres│
+└─────────────────┘         └─────────────────┘         └─────────────────┘
+                                                               │
+                                                               ▼
+                                                        ┌─────────────────┐
+                                                        │  File Storage   │
+                                                        │  Firebase/Azure │
+                                                        └─────────────────┘
 ```
 
-#### 15.5. Rapid Deployment Strategy
+### Tech Stack
 
-**How the pipeline addresses rapid deployment of high-quality software:**
+**Backend:**
 
-1. **Automated Quality Checks**: SonarQube scans catch code quality issues early, preventing technical debt accumulation that slows future deployments.
-2. **Security-First Approach**: Snyk identifies vulnerabilities before production, reducing post-deployment security patches.
-3. **Parallel Execution**: All workflows run in parallel, reducing feedback time from ~15 minutes to ~5 minutes.
-4. **Fail-Fast Principle**: First failing quality gate stops the pipeline immediately, saving compute and time.
-5. **Automated Play Store Publishing**: On release creation, APK is automatically published, eliminating manual deployment steps and reducing release time from hours to minutes.
-6. **Version Consistency**: Automated versioning ensures consistency across web, backend, and mobile releases.
+- Node.js 20+ with Express.js
+- TypeScript
+- Prisma ORM
+- SQLite (dev) / PostgreSQL (production)
+- JWT authentication
+- PDFKit for PDF generation
 
-#### 15.6. Team Usage
+**Web:**
 
-**Daily Development:**
+- Next.js 14
+- React 18
+- TypeScript
+- TailwindCSS
+- Zustand for state management
+- React Query for data fetching
 
-- Developers push code to feature branches
-- PR triggers CI workflows automatically
-- Team reviews SonarQube and Snyk reports in PR comments
-- Merge only after all quality gates pass
+**Android:**
 
-**Release Process:**
+- Kotlin
+- Android SDK 24+
+- Room Database
+- Retrofit for API calls
+- Glide for image loading
 
-1. Merge approved PR to `main`
-2. Create GitHub Release with semantic version tag (e.g., `v1.2.3`)
-3. Play Store workflow automatically builds and publishes APK
-4. Monitor deployment status in GitHub Actions dashboard
+## Prerequisites
 
-**Quality Monitoring:**
+Before you begin, ensure you have the following installed:
 
-- Weekly review of SonarQube dashboards for code quality trends
-- Monthly security review using Snyk reports
-- Continuous improvement based on pipeline metrics
+### Required
+
+- **Node.js** 18.0.0 or higher ([Download](https://nodejs.org/))
+- **npm** 9.0.0 or higher (comes with Node.js)
+- **Git** ([Download](https://git-scm.com/))
+
+### For Android Development
+
+- **Java Development Kit (JDK)** 17 ([Download](https://adoptium.net/))
+- **Android Studio** Arctic Fox or newer ([Download](https://developer.android.com/studio))
+- **Android SDK** (installed via Android Studio)
+
+### Optional but Recommended
+
+- **PostgreSQL** (if using production database)
+- **Docker** (for containerized deployment)
+
+## Quick Start
+
+The fastest way to get started:
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd WIL
+
+# Install all dependencies
+npm run install:all
+
+# Setup database and seed data
+npm run setup
+
+# Start all services (backend + web)
+npm run dev
+```
+
+**Backend API:** http://localhost:3000  
+**Web Portal:** http://localhost:3001
+
+For detailed setup instructions, see [Installation](#installation).
+
+## Installation
+
+### 1. Clone the Repository
+
+```bash
+git clone <repository-url>
+cd WIL
+```
+
+### 2. Install Dependencies
+
+#### Option A: Install All Components (Recommended)
+
+```bash
+npm run install:all
+```
+
+This installs dependencies for root, backend, and web components.
+
+#### Option B: Install Individually
+
+```bash
+# Root dependencies
+npm install
+
+# Backend dependencies
+cd backend
+npm install
+cd ..
+
+# Web dependencies
+cd web
+npm install
+cd ..
+```
+
+### 3. Setup Database
+
+```bash
+cd backend
+
+# Generate Prisma Client
+npm run prisma:generate
+
+# Run database migrations
+npm run prisma:migrate
+
+# Seed database with sample data
+npm run prisma:seed
+```
+
+This creates a SQLite database at `backend/prisma/dev.db` with sample users and BOQ data.
+
+### 4. Configure Environment Variables
+
+See [Environment Variables](#environment-variables) section for required configuration.
+
+## Running the Application
+
+### Running All Services Together
+
+#### Using npm script (Recommended)
+
+```bash
+npm run dev
+```
+
+This starts both backend (port 3000) and web portal (port 3001) concurrently.
+
+#### Using startup script
+
+**Linux/macOS:**
+
+```bash
+./start-dev.sh
+```
+
+**Windows:**
+
+```bash
+start-dev.bat
+```
+
+### Running Individual Components
+
+#### Backend API Only
+
+```bash
+cd backend
+npm run dev
+```
+
+Backend runs on http://localhost:3000
+
+**Available endpoints:**
+
+- API: http://localhost:3000/api
+- Health check: http://localhost:3000/api/health
+
+#### Web Portal Only
+
+```bash
+cd web
+npm run dev
+```
+
+Web portal runs on http://localhost:3001
+
+#### Android App
+
+1. Open Android Studio
+2. Open the `android` folder
+3. Sync Gradle files
+4. Run on an emulator or connected device
+
+**Configuration:**
+
+- Update `android/gradle.properties` to set `API_BASE_URL` for your backend
+- For emulator: `http://10.0.2.2:3000/api/`
+- For physical device: `http://YOUR_COMPUTER_IP:3000/api/`
+
+### Building for Production
+
+#### Backend
+
+```bash
+cd backend
+npm run build
+npm start
+```
+
+#### Web
+
+```bash
+cd web
+npm run build
+npm start
+```
+
+#### Android
+
+```bash
+cd android
+./gradlew assembleRelease
+```
+
+APK will be in `android/app/build/outputs/apk/release/`
+
+## Environment Variables
+
+### Backend Environment Variables
+
+Create `backend/.env` file:
+
+```env
+# Database
+DATABASE_URL="file:./prisma/dev.db"
+
+# JWT Secret (generate a strong random string)
+JWT_SECRET="your-super-secret-jwt-key-change-this"
+
+# CORS Origins (comma-separated)
+ALLOWED_ORIGINS="http://localhost:3001,https://your-domain.com"
+
+# Server Port (optional, defaults to 3000)
+PORT=3000
+
+# Firebase Storage (optional, for file storage)
+FIREBASE_PROJECT_ID="your-project-id"
+FIREBASE_PRIVATE_KEY="your-private-key"
+FIREBASE_CLIENT_EMAIL="your-client-email"
+
+# Azure Blob Storage (optional, alternative to Firebase)
+AZURE_STORAGE_CONNECTION_STRING="your-connection-string"
+AZURE_STORAGE_CONTAINER_NAME="invoices"
+
+# Email Service (optional)
+SENDGRID_API_KEY="your-sendgrid-api-key"
+RESEND_API_KEY="your-resend-api-key"
+```
+
+### Web Environment Variables
+
+Create `web/.env.local` file:
+
+```env
+# Backend API URL
+NEXT_PUBLIC_API_BASE_URL=http://localhost:3000/api
+
+# For production, use your deployed backend URL:
+# NEXT_PUBLIC_API_BASE_URL=https://your-backend.railway.app/api
+```
+
+### Android Environment Variables
+
+Edit `android/gradle.properties`:
+
+```properties
+# API Base URL
+# For Android Emulator:
+API_BASE_URL=http://10.0.2.2:3000/api/
+
+# For Physical Device (replace with your computer's IP):
+# API_BASE_URL=http://192.168.1.XXX:3000/api/
+
+# For Production:
+# API_BASE_URL=https://your-backend.railway.app/api/
+```
+
+## Project Structure
+
+```
+WIL/
+├── backend/                 # Express.js backend API
+│   ├── src/
+│   │   ├── routes/         # API route handlers
+│   │   ├── services/       # Business logic
+│   │   ├── middleware/     # Auth middleware
+│   │   └── server.ts       # Entry point
+│   ├── prisma/
+│   │   ├── schema.prisma   # Database schema
+│   │   ├── migrations/     # Database migrations
+│   │   ├── seed.ts         # Seed data
+│   │   └── dev.db          # SQLite database
+│   ├── dist/               # Compiled JavaScript
+│   └── Dockerfile          # Docker configuration
+│
+├── web/                     # Next.js web portal
+│   ├── src/
+│   │   ├── app/            # Next.js app router pages
+│   │   ├── lib/            # Utilities and API client
+│   │   └── store/          # Zustand state management
+│   └── public/             # Static assets
+│
+├── android/                 # Android mobile app
+│   ├── app/
+│   │   └── src/main/java/  # Kotlin source code
+│   └── gradle.properties    # Build configuration
+│
+├── .github/workflows/       # CI/CD pipelines
+├── DevOps.md                # DevOps documentation
+├── Context.md               # Project context and specifications
+└── package.json             # Root package.json with scripts
+```
+
+## API Documentation
+
+### Authentication
+
+#### Login
+
+```http
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@test.com",
+  "password": "password123"
+}
+```
+
+**Response:**
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "user-id",
+    "email": "admin@test.com",
+    "role": "ADMIN"
+  }
+}
+```
+
+### BOQ Management
+
+#### Upload BOQ
+
+```http
+POST /api/boq/upload
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+
+file: <excel-file>
+```
+
+#### Get Active BOQ Items
+
+```http
+GET /api/boq/active/items?q=search&limit=20
+Authorization: Bearer <token>
+```
+
+### Invoice Management
+
+#### Create Invoice
+
+```http
+POST /api/invoices
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "customerName": "Customer Name",
+  "projectSite": "Project Site",
+  "preparedBy": "John Doe",
+  "lines": [
+    {
+      "itemName": "Item Name",
+      "unit": "M",
+      "unitPrice": "100.00",
+      "quantity": "10",
+      "amount": "1000.00"
+    }
+  ]
+}
+```
+
+#### Get Invoice
+
+```http
+GET /api/invoices/:id
+Authorization: Bearer <token>
+```
+
+#### Submit Invoice
+
+```http
+POST /api/invoices/:id/submit
+Authorization: Bearer <token>
+```
+
+#### Approve Invoice
+
+```http
+POST /api/invoices/:id/approve
+Authorization: Bearer <token>
+```
+
+#### Upload Media
+
+```http
+POST /api/invoices/:id/media
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+
+file: <image-file>
+```
+
+### Health Check
+
+```http
+GET /api/health
+```
+
+**Response:**
+
+```json
+{
+  "status": "ok"
+}
+```
+
+## Testing
+
+### Backend Tests
+
+```bash
+cd backend
+npm test
+```
+
+### Web Tests
+
+```bash
+cd web
+npm test
+```
+
+### Android Tests
+
+```bash
+cd android
+./gradlew test
+```
+
+## Deployment
+
+### Backend Deployment (Railway)
+
+1. Connect Railway to your GitHub repository
+2. Set environment variables in Railway dashboard
+3. Railway automatically deploys on push to `main` branch
+4. See `DevOps.md` for detailed deployment documentation
+
+**Required Environment Variables:**
+
+- `DATABASE_URL`
+- `JWT_SECRET`
+- `ALLOWED_ORIGINS`
+
+### Web Deployment (Netlify)
+
+1. Connect Netlify to your GitHub repository
+2. Configure build settings:
+   - Build command: `cd web && npm run build`
+   - Publish directory: `web/.next`
+3. Set environment variables:
+   - `NEXT_PUBLIC_API_BASE_URL`
+4. Deploy automatically on push to `main`
+
+### Android Deployment (Play Store)
+
+1. Create a GitHub Release with version tag (e.g., `v1.0.0`)
+2. GitHub Actions automatically builds and publishes to Play Store
+3. See `.github/workflows/play-store-release.yml` for details
+
+For detailed deployment information, see [DevOps.md](./DevOps.md).
+
+## Troubleshooting
+
+### Backend Issues
+
+**Database not found:**
+
+```bash
+cd backend
+npm run prisma:generate
+npm run prisma:migrate
+```
+
+**Port 3000 already in use:**
+
+- Change `PORT` in `.env` or kill the process using port 3000
+
+**Prisma Client not generated:**
+
+```bash
+cd backend
+npm run prisma:generate
+```
+
+### Web Issues
+
+**API connection errors:**
+
+- Verify `NEXT_PUBLIC_API_BASE_URL` in `web/.env.local`
+- Ensure backend is running on the correct port
+- Check CORS configuration in backend
+
+**Build errors:**
+
+```bash
+cd web
+rm -rf .next node_modules
+npm install
+npm run build
+```
+
+### Android Issues
+
+**API connection errors:**
+
+- Verify `API_BASE_URL` in `android/gradle.properties`
+- For emulator: use `http://10.0.2.2:3000/api/`
+- For physical device: use your computer's IP address
+
+**Build errors:**
+
+```bash
+cd android
+./gradlew clean
+./gradlew assembleDebug
+```
+
+### Database Issues
+
+**Reset database:**
+
+```bash
+cd backend
+rm prisma/dev.db
+npm run prisma:migrate
+npm run prisma:seed
+```
+
+**View database:**
+
+```bash
+cd backend
+npm run prisma:studio
+```
+
+This opens Prisma Studio at http://localhost:5555
+
+## Contributing
+
+1. Create a feature branch: `git checkout -b feature/amazing-feature`
+2. Make your changes
+3. Commit: `git commit -m 'Add amazing feature'`
+4. Push: `git push origin feature/amazing-feature`
+5. Create a Pull Request
+
+### Code Style
+
+- **Backend**: TypeScript with ESLint
+- **Web**: TypeScript with Next.js ESLint config
+- **Android**: Kotlin with standard Android conventions
+
+### Testing
+
+- Write tests for new features
+- Ensure all tests pass before submitting PR
+- Include integration tests for API endpoints
+
+## Additional Resources
+
+- [Project Context](./Context.md) - Detailed project specifications and requirements
+- [DevOps Documentation](./DevOps.md) - CI/CD pipeline and deployment guides
+- [Backend README](./backend/README.md) - Backend-specific documentation
+- [Web README](./web/README.md) - Web portal documentation
+
+## License
+
+MIT
+
+## Support
+
+For issues and questions:
+
+- Create an issue in the repository
+- Contact the development team
 
 ---
 
-### 16. Immutable Invoices and BOQ Changes
-
-- Upon approval, the server renders the authoritative PDF and stores it in Azure Blob. The invoice record stores `serverPdfUrl` and totals.
-- PDFs are the source of truth for historical invoices; later BOQ changes do not alter previously created invoices.
-- `InvoiceLine` keeps snapshot values to mirror the PDF data in the database.
-
----
-
-## Changelog
-
-#### 2025-01-XX - DevOps & Quality Enhancements
-
-- ✅ Added changelog section to Context.md for tracking all changes
-- ✅ Integrated SonarQube code quality scans into all CI workflows (web, backend, Android)
-- ✅ Integrated Snyk security vulnerability scanning into all CI workflows
-- ✅ Created Play Store publishing workflow (`play-store-release.yml`) triggered on GitHub releases
-- ✅ Added comprehensive DevOps pipeline documentation with flow diagrams
-- ✅ Documented rapid deployment strategy and team usage guidelines
-
-#### 2025-01-XX - Initial Implementation
-
-- ✅ Initialized Express + TypeScript backend with health endpoint
-- ✅ Implemented BOQ upload/validation API with Excel parsing (`xlsx`, `zod` validation)
-- ✅ Added invoice workflow endpoints (create, submit, approve, reject, comments, polling)
-- ✅ Created GitHub Actions CI workflows for web, backend, and Android builds
+**Last Updated:** January 2025
