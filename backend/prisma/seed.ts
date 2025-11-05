@@ -108,12 +108,32 @@ async function main() {
   try {
     const csvContent = readFileSync(csvPath, "utf-8");
     const result = await validateBoqCSV(Buffer.from(csvContent, "utf-8"));
+
+    // If there are only duplicate warnings (not critical errors), use the valid items
+    // Duplicates are already filtered out by the validator, so we can use result.items
     if (result.issues.length > 0) {
-      console.error("CSV validation issues:", result.issues);
-      throw new Error(
-        `CSV validation failed: ${result.issues.map((i) => i.message).join(", ")}`
+      const duplicateIssues = result.issues.filter((i) =>
+        i.message?.includes("Duplicate")
       );
+      const otherIssues = result.issues.filter(
+        (i) => !i.message?.includes("Duplicate")
+      );
+
+      if (otherIssues.length > 0) {
+        // Critical errors (missing columns, invalid data, etc.)
+        console.error("CSV validation issues:", otherIssues);
+        throw new Error(
+          `CSV validation failed: ${otherIssues.map((i) => i.message).join(", ")}`
+        );
+      } else if (duplicateIssues.length > 0) {
+        // Only duplicates - log warning but continue with valid items
+        console.warn(
+          `Warning: Found ${duplicateIssues.length} duplicate SAP numbers. They have been skipped.`
+        );
+        console.warn(`Using ${result.items.length} valid items from CSV`);
+      }
     }
+
     boqItems = result.items;
     console.log(`Loaded ${boqItems.length} BOQ items from CSV`);
   } catch (error) {

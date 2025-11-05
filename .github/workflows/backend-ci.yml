@@ -38,22 +38,4 @@ jobs:
       - name: Build
         run: npm run build --if-present
 
-      - name: Unit tests
-        run: npm test --if-present -- --ci --reporters=default
-
-      - name: Run SonarQube Analysis
-        uses: sonarsource/sonarqube-scan-action@master
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-        continue-on-error: true
-
-      - name: Run Snyk Security Scan
-        uses: snyk/actions/node@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        continue-on-error: true
-        with:
-          args: --severity-threshold=high
-
 

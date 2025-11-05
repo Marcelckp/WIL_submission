@@ -148,10 +148,15 @@ object ApiClient {
             baseUrl += "/"
         }
         
-        // Verify we're using the correct URL
-        val expectedUrl = "https://wilsubmission-production.up.railway.app/api/"
-        if (!baseUrl.equals(expectedUrl, ignoreCase = true)) {
-            android.util.Log.w("ApiClient", "WARNING: URL mismatch! Expected: $expectedUrl, Got: $baseUrl")
+        // Verify we're using the correct URL (for debugging)
+        // Note: This is just a warning - the app will work with any valid URL
+        val expectedLocalUrl = "http://10.0.2.2:3000/api/"
+        val expectedProdUrl = "https://wilsubmission-production.up.railway.app/api/"
+        if (!baseUrl.equals(expectedLocalUrl, ignoreCase = true) && 
+            !baseUrl.equals(expectedProdUrl, ignoreCase = true)) {
+            android.util.Log.w("ApiClient", "WARNING: URL doesn't match expected values!")
+            android.util.Log.w("ApiClient", "Expected: $expectedLocalUrl (local) or $expectedProdUrl (prod)")
+            android.util.Log.w("ApiClient", "Got: $baseUrl")
             android.util.Log.w("ApiClient", "This might indicate BuildConfig wasn't regenerated. Please rebuild the app.")
         }
         

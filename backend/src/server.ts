@@ -11,9 +11,7 @@ export const app = express();
 // CORS middleware
 // In production, set ALLOWED_ORIGINS environment variable (comma-separated)
 // Example: ALLOWED_ORIGINS=https://your-app.vercel.app,https://another-domain.com
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(",").map((origin) => origin.trim())
-  : ["*"]; // Allow all in development
+const allowedOrigins = "*"
 
 app.use((req, res, next) => {
   const origin = req.headers.origin;
