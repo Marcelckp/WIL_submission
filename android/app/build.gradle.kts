@@ -12,7 +12,7 @@ configurations.all {
 // Read API URL from gradle.properties or environment variable
 val apiBaseUrl = project.findProperty("API_BASE_URL") as String?
     ?: System.getenv("API_BASE_URL")
-    ?: "https://wilsubmission-production.up.railway.app/api/"
+    ?: "http://10.0.2.2:3000/api/" // Default to localhost for Android emulator
 
 android {
     namespace = "com.smartinvoice.app"
@@ -28,7 +28,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         
         // API base URL - reads from gradle.properties or environment variable
-        // Defaults to Railway production backend
+        // Defaults to localhost (10.0.2.2) for Android emulator
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
     }
 
@@ -44,8 +44,8 @@ android {
         }
         debug {
             // Uses API_BASE_URL from gradle.properties or environment variable
-            // For local development, update gradle.properties:
-            // API_BASE_URL=http://10.0.2.2:3000/api/
+            // Defaults to http://10.0.2.2:3000/api/ for local development
+            // For physical device, use your computer's IP address (e.g., http://192.168.1.XXX:3000/api/)
             buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
         }
     }

@@ -142,8 +142,23 @@ object ApiClient {
             .build()
 
         // Use BuildConfig for URL, but log it for debugging
-        val baseUrl = BuildConfig.API_BASE_URL
+        // Ensure URL ends with trailing slash for Retrofit
+        var baseUrl = BuildConfig.API_BASE_URL.trim()
+        if (!baseUrl.endsWith("/")) {
+            baseUrl += "/"
+        }
+        
+        // Verify we're using the correct URL
+        val expectedUrl = "https://wilsubmission-production.up.railway.app/api/"
+        if (!baseUrl.equals(expectedUrl, ignoreCase = true)) {
+            android.util.Log.w("ApiClient", "WARNING: URL mismatch! Expected: $expectedUrl, Got: $baseUrl")
+            android.util.Log.w("ApiClient", "This might indicate BuildConfig wasn't regenerated. Please rebuild the app.")
+        }
+        
+        android.util.Log.d("ApiClient", "=========================================")
         android.util.Log.d("ApiClient", "Using API Base URL: $baseUrl")
+        android.util.Log.d("ApiClient", "BuildConfig.API_BASE_URL: ${BuildConfig.API_BASE_URL}")
+        android.util.Log.d("ApiClient", "=========================================")
 
         return Retrofit.Builder()
             .baseUrl(baseUrl)

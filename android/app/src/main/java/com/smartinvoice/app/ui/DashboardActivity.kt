@@ -242,19 +242,29 @@ class DashboardActivity : AppCompatActivity() {
                 // Ensure we're using the latest token by recreating the API service
                 apiService = com.smartinvoice.app.data.remote.ApiClient.create(this@DashboardActivity)
                 
+                // Debug: Log current user info
+                val currentUserId = prefs.getUserId()
+                val currentUserEmail = prefs.getUserEmail()
+                val currentUserName = prefs.getUserName()
+                android.util.Log.d("DashboardActivity", "Current user: ID=$currentUserId, Email=$currentUserEmail, Name=$currentUserName")
+                
                 val response = apiService.getInvoices()
                 
+                android.util.Log.d("DashboardActivity", "Received ${response.invoices.size} invoices from API")
+                
                 // Double-check that we're only showing invoices for the current user
-                val currentUserId = prefs.getUserId()
                 val filteredInvoices = if (currentUserId != null) {
                     // Filter invoices client-side as an extra safety measure
                     // This ensures we only show invoices created by the current user
                     // Backend should already filter, but this adds an extra layer of protection
-                    response.invoices.filter { 
+                    val filtered = response.invoices.filter { 
                         it.createdBy != null && it.createdBy == currentUserId 
                     }
+                    android.util.Log.d("DashboardActivity", "Filtered to ${filtered.size} invoices for user $currentUserId")
+                    filtered
                 } else {
                     // If no user ID, show empty list to prevent showing wrong user's data
+                    android.util.Log.w("DashboardActivity", "No user ID found - showing empty list")
                     emptyList()
                 }
                 

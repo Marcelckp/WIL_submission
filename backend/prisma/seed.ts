@@ -2,8 +2,12 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { readFileSync } from "fs";
-import { join } from "path";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
 import { validateBoqCSV } from "../src/services/csvParser.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const prisma = new PrismaClient();
 
@@ -156,6 +160,50 @@ async function main() {
     console.log(`BOQ already exists with ID: ${existingBoq.id}`);
   }
 
+  // Fix any invoices that have incorrect createdBy references
+  // This can happen if the database was reset and users got new IDs
+  const invoicesToFix = await prisma.invoice.findMany({
+    where: {
+      companyId: company.id,
+      OR: [{ preparedBy: "Jordan Lee" }, { preparedBy: "Alex Johnson" }],
+    },
+    select: {
+      id: true,
+      invoiceNumber: true,
+      createdBy: true,
+      preparedBy: true,
+    },
+  });
+
+  let fixedCount = 0;
+  for (const inv of invoicesToFix) {
+    let correctUserId: string | null = null;
+
+    if (inv.preparedBy === "Jordan Lee" && inv.createdBy !== field.id) {
+      correctUserId = field.id;
+    } else if (
+      inv.preparedBy === "Alex Johnson" &&
+      inv.createdBy !== field2.id
+    ) {
+      correctUserId = field2.id;
+    }
+
+    if (correctUserId) {
+      await prisma.invoice.update({
+        where: { id: inv.id },
+        data: { createdBy: correctUserId },
+      });
+      fixedCount++;
+      console.log(`Fixed invoice ${inv.invoiceNumber} createdBy reference`);
+    }
+  }
+
+  if (fixedCount > 0) {
+    console.log(
+      `Fixed ${fixedCount} invoice(s) with incorrect createdBy references`
+    );
+  }
+
   console.log("Seed completed:", {
     company: company.name,
     admin: admin.email,
@@ -163,6 +211,7 @@ async function main() {
     field2: field2.email,
     field3: field3.email,
     boqItems: boqItems.length,
+    invoicesFixed: fixedCount,
   });
 }
 

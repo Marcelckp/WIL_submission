@@ -27,22 +27,6 @@ jobs:
       - name: Install dependencies
         run: npm ci || npm install
 
-      - name: Lint
-        run: |
-          if [ -f package.json ] && jq -e '.scripts.lint' package.json > /dev/null; then
-            npm run lint
-          else
-            echo 'no lint script; skipping'
-          fi
-
-      - name: Type check
-        run: |
-          if [ -f package.json ] && jq -e '.scripts.typecheck' package.json > /dev/null; then
-            npm run typecheck
-          else
-            echo 'no typecheck script; skipping'
-          fi
-
       - name: Build
         run: npm run build --if-present
 

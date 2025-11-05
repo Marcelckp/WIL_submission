@@ -22,6 +22,9 @@ class LoginActivity : AppCompatActivity() {
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Log the API URL being used for debugging
+        android.util.Log.d("LoginActivity", "BuildConfig.API_BASE_URL: ${com.smartinvoice.app.BuildConfig.API_BASE_URL}")
+        
         apiService = com.smartinvoice.app.data.remote.ApiClient.create(this)
         prefs = SharedPreferencesHelper.getInstance(this)
 

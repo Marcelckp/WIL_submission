@@ -28,6 +28,9 @@ export function authenticateToken(
       companyId: string;
     };
     req.user = decoded;
+    console.log(
+      `[AUTH] Authenticated user: ${decoded.id} (${decoded.email}) with role: ${decoded.role}`
+    );
     next();
   } catch (err) {
     console.error(

@@ -61,6 +61,18 @@ const upload = multer({
 
 export const invoicesRouter = Router();
 
+/**
+ * Helper function to get current user ID by email
+ * This ensures we use email (static) instead of ID (dynamic) for filtering
+ */
+async function getCurrentUserIdByEmail(email: string): Promise<string | null> {
+  const user = await prisma.user.findUnique({
+    where: { email },
+    select: { id: true },
+  });
+  return user?.id || null;
+}
+
 const InvoiceLineSchema = z.object({
   itemName: z.string().min(1),
   description: z.string().optional(),
@@ -161,13 +173,97 @@ invoicesRouter.get("/", authenticateToken, async (req: AuthRequest, res) => {
 
   const where: any = { companyId: req.user!.companyId };
 
-  // Operators only see their own invoices
-  if (req.user!.role === "OPERATOR") {
-    where.createdBy = req.user!.id;
+  // Operators and Field users only see their own invoices
+  // Use email to look up current user ID (email is static, ID changes on reset)
+  if (req.user!.role === "OPERATOR" || req.user!.role === "FIELD") {
+    const currentUserId = await getCurrentUserIdByEmail(req.user!.email);
+    if (!currentUserId) {
+      return res.status(403).json({ error: "User not found" });
+    }
+
+    // Filter invoices by the user's current ID
+    // Also include invoices created by this email (via creator relation)
+    where.OR = [
+      { createdBy: currentUserId },
+      {
+        creator: {
+          email: req.user!.email,
+        },
+      },
+    ];
+
+    console.log(
+      `[INVOICES] Filtering for ${req.user!.role} user ${req.user!.email} (current ID: ${currentUserId})`
+    );
+  } else {
+    console.log(
+      `[INVOICES] Admin user ${req.user!.id} (${req.user!.email}) - showing all invoices`
+    );
   }
 
   if (status) {
     where.status = status;
+  }
+
+  console.log(`[INVOICES] Query where clause:`, JSON.stringify(where, null, 2));
+
+  // Debug: Check total invoices for this company
+  const totalCompanyInvoices = await prisma.invoice.count({
+    where: { companyId: req.user!.companyId },
+  });
+  console.log(
+    `[INVOICES] Total invoices for company ${req.user!.companyId}: ${totalCompanyInvoices}`
+  );
+
+  // Debug: List all invoices and their creators
+  if (totalCompanyInvoices > 0) {
+    const allInvoices = await prisma.invoice.findMany({
+      where: { companyId: req.user!.companyId },
+      select: {
+        id: true,
+        invoiceNumber: true,
+        createdBy: true,
+        customerName: true,
+        preparedBy: true,
+      },
+    });
+    console.log(`[INVOICES] All invoices in company:`);
+
+    // Also fetch user info for createdBy IDs
+    const creatorIds = [
+      ...new Set(allInvoices.map((inv) => inv.createdBy).filter(Boolean)),
+    ];
+    const creators = await prisma.user.findMany({
+      where: { id: { in: creatorIds } },
+      select: { id: true, email: true, name: true },
+    });
+    const creatorMap = new Map(creators.map((u) => [u.id, u]));
+
+    for (const inv of allInvoices) {
+      const creator = creatorMap.get(inv.createdBy || "");
+      const creatorInfo = creator
+        ? `${creator.name} (${creator.email})`
+        : "Unknown";
+      console.log(
+        `  - ${inv.invoiceNumber} (${inv.customerName}) created by: ${inv.createdBy} [${creatorInfo}] | Prepared By: ${inv.preparedBy || "N/A"}`
+      );
+    }
+  }
+
+  // Debug: Check invoices created by this user (by email)
+  if (req.user!.role === "OPERATOR" || req.user!.role === "FIELD") {
+    const currentUserId = await getCurrentUserIdByEmail(req.user!.email);
+    if (currentUserId) {
+      const userInvoices = await prisma.invoice.count({
+        where: {
+          companyId: req.user!.companyId,
+          createdBy: currentUserId,
+        },
+      });
+      console.log(
+        `[INVOICES] Invoices created by user ${req.user!.email} (ID: ${currentUserId}): ${userInvoices}`
+      );
+    }
   }
 
   const [invoices, total] = await Promise.all([
@@ -206,6 +302,10 @@ invoicesRouter.get("/", authenticateToken, async (req: AuthRequest, res) => {
     prisma.invoice.count({ where }),
   ]);
 
+  console.log(
+    `[INVOICES] Found ${invoices.length} invoices (total: ${total}) for user ${req.user!.id}`
+  );
+
   res.json({ invoices, total, limit, offset });
 });
 
@@ -217,9 +317,14 @@ invoicesRouter.get(
     const companyId = req.user!.companyId;
     const where: any = { companyId };
 
-    // Operators only see metrics for their own invoices
-    if (req.user!.role === "OPERATOR") {
-      where.createdBy = req.user!.id;
+    // Operators and Field users only see metrics for their own invoices
+    // Use email to look up current user ID (email is static, ID changes on reset)
+    if (req.user!.role === "OPERATOR" || req.user!.role === "FIELD") {
+      const currentUserId = await getCurrentUserIdByEmail(req.user!.email);
+      if (!currentUserId) {
+        return res.status(403).json({ error: "User not found" });
+      }
+      where.createdBy = currentUserId;
     }
 
     const invoices = await prisma.invoice.findMany({
@@ -433,9 +538,20 @@ invoicesRouter.get("/:id", authenticateToken, async (req: AuthRequest, res) => {
     return res.sendStatus(404);
   }
 
-  // Operators can only access their own invoices
-  if (req.user!.role === "OPERATOR" && invoice.createdBy !== req.user!.id) {
-    return res.sendStatus(403);
+  // Operators and Field users can only access their own invoices
+  // Use email to verify ownership (email is static, ID changes on reset)
+  if (req.user!.role === "OPERATOR" || req.user!.role === "FIELD") {
+    const currentUserId = await getCurrentUserIdByEmail(req.user!.email);
+    if (!currentUserId || invoice.createdBy !== currentUserId) {
+      // Also check by creator email as fallback
+      const creator = await prisma.user.findUnique({
+        where: { id: invoice.createdBy },
+        select: { email: true },
+      });
+      if (creator?.email !== req.user!.email) {
+        return res.sendStatus(403);
+      }
+    }
   }
 
   res.json(invoice);
@@ -455,9 +571,20 @@ invoicesRouter.patch(
       return res.sendStatus(404);
     }
 
-    // Operators can only update their own invoices
-    if (req.user!.role === "OPERATOR" && invoice.createdBy !== req.user!.id) {
-      return res.sendStatus(403);
+    // Operators and Field users can only update their own invoices
+    // Use email to verify ownership (email is static, ID changes on reset)
+    if (req.user!.role === "OPERATOR" || req.user!.role === "FIELD") {
+      const currentUserId = await getCurrentUserIdByEmail(req.user!.email);
+      if (!currentUserId || invoice.createdBy !== currentUserId) {
+        // Also check by creator email as fallback
+        const creator = await prisma.user.findUnique({
+          where: { id: invoice.createdBy },
+          select: { email: true },
+        });
+        if (creator?.email !== req.user!.email) {
+          return res.sendStatus(403);
+        }
+      }
     }
 
     // Special case: Allow updating only customerEmail for FINAL invoices (for email delivery)
@@ -572,9 +699,20 @@ invoicesRouter.post(
       return res.sendStatus(404);
     }
 
-    // Operators can only submit their own invoices
-    if (req.user!.role === "OPERATOR" && invoice.createdBy !== req.user!.id) {
-      return res.sendStatus(403);
+    // Operators and Field users can only submit their own invoices
+    // Use email to verify ownership (email is static, ID changes on reset)
+    if (req.user!.role === "OPERATOR" || req.user!.role === "FIELD") {
+      const currentUserId = await getCurrentUserIdByEmail(req.user!.email);
+      if (!currentUserId || invoice.createdBy !== currentUserId) {
+        // Also check by creator email as fallback
+        const creator = await prisma.user.findUnique({
+          where: { id: invoice.createdBy },
+          select: { email: true },
+        });
+        if (creator?.email !== req.user!.email) {
+          return res.sendStatus(403);
+        }
+      }
     }
 
     if (invoice.status !== "DRAFT") {
