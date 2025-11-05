@@ -61,13 +61,13 @@ The system streamlines invoice creation by allowing field operators to search BO
 ## Architecture
 
 ```
-┌─────────────────┐         ┌─────────────────┐         ┌─────────────────┐
-│   Android App   │         │   Web Portal    │         │   Backend API   │
-│   (Kotlin)      │────────▶│   (Next.js)     │────────▶│   (Express)    │
-│                 │         │                 │         │                 │
-│  - Room DB      │         │  - React        │         │  - Prisma ORM   │
-│  - Offline Sync │         │  - TailwindCSS  │         │  - SQLite/Postgres│
-└─────────────────┘         └─────────────────┘         └─────────────────┘
+┌─────────────────┐         ┌─────────────────┐         ┌────────────────────┐
+│   Android App   │         │   Web Portal    │         │   Backend API      │
+│   (Kotlin)      │────────▶│   (Next.js)     │────────▶│   (Express)        │
+│                 │         │                 │         │                    │
+│  - Room DB      │         │  - React        │         │  - Prisma ORM      │
+│  - Offline Sync │         │  - TailwindCSS  │         │  - SQLite/Postgres │
+└─────────────────┘         └─────────────────┘         └────────────────────┘
                                                                │
                                                                ▼
                                                         ┌─────────────────┐
